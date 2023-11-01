@@ -1,6 +1,7 @@
 # INSTALLATION
 
 - pip3 install -r requirements.txt
+- pip3 install openmim
 - mim install mmengine
 - mim install "mmcv>=2.0.0"
 - mim install mmdet

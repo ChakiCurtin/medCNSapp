@@ -6,7 +6,7 @@ from mmengine.visualization import Visualizer
 from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 
-def registerStuff():
+def registerstuff():
     register_all_modules()
     # @VISUALIZERS.register_module()
     # class DetLocalVisualizer(Visualizer):

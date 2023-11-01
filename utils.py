@@ -23,7 +23,7 @@ DEF: Function takes the mask produced by SAM, reshapes it and adds colours and t
 '''
 def show_mask(mask, ax, random_color=False):
     if random_color:
-        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+        color = np.concatenate([np.random.Generator.random(3), np.array([0.6])], axis=0)
     else:
         color = np.array([30/255, 144/255, 255/255, 0.6])
     h, w = mask.shape[-2:]
@@ -38,7 +38,7 @@ INPUT: box: ?, ax: plt.gca()
 OUTPUT: Null
 DEF: Function takes bounding box produced and add it to plot
 '''
-def show_box(box, ax):
+def show_box_plt(box, ax):
     x0, y0 = box[0], box[1]
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=1))    
@@ -48,7 +48,9 @@ def get_images_old(args: argparse.Namespace):
     images = args.dataset_root / args.dataset / args.set
     return sorted(images.glob("*.png"))
 
+
 # -- [ YOLO INIT ] -- #
+@st.cache_resource
 def mmyolo_init(config, pathfile):
     print("[*] Loading path file...")
     print("[*] Loading config file...")
@@ -60,6 +62,7 @@ def mmyolo_init(config, pathfile):
     return model
 
 # -- [SAM INIT ] -- #
+@st.cache_resource
 def sam_init():
     sys.path.append("..")
     sam_checkpoint = "sam_vit_h_4b8939.pth"
@@ -84,13 +87,13 @@ def inference_detections(model, image):
         nuclei_list.append([X1,Y1,X2,Y2])
     return nuclei_list
 
-
-def input_boxes_SAM(nuclei_list):
+@st.cache_data
+def input_boxes_sam(nuclei_list):
     inputs_boxes = [nuclei_list[0:199],nuclei_list[200:399],nuclei_list[400:599],nuclei_list[600:799],nuclei_list[800:999]]
     return inputs_boxes
 
 
-def prediction_masks_SAM(image, predictor, inputs_boxes):
+def prediction_masks_sam(image, predictor, inputs_boxes):
     masks_list = []
     predictor.set_image(image)
     for section in inputs_boxes:
@@ -107,8 +110,7 @@ def prediction_masks_SAM(image, predictor, inputs_boxes):
     return masks_list
 
 
-def masks_array_SAM(image, masks_list, ):
-    #name_cont = "test_nuclei_sam_Full_" + image.name
+def masks_array_sam(masks_list):
     masked_out_list = []
     for masks in masks_list:
         #print("[**] Plotting batch masks | batch: " + str(ii))
