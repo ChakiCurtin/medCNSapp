@@ -34,7 +34,7 @@ def process_image(path_img, image, bar):
     batched_mask = utils.masks_array_sam(masks_list=masks_list)
     bar.progress(90)
     # -- return the mask -- #
-    return batched_mask
+    return detections, batched_mask
 
 
 def main():
@@ -77,7 +77,9 @@ def main():
                         st.stop()
                     with st.spinner(text='In progress'):
                         bar = st.progress(0)
-                        processed_mask = process_image(f.name, img, bar)
+                        detections, processed_mask = process_image(f.name, img, bar)
+                        if 'detections' not in st.session_state:
+                             st.session_state.detections = detections
                         #processed_mask = img
                         bar.progress(100)
                         st.success('Done')
@@ -98,17 +100,19 @@ def main():
                     st.session_state.mask_img = total_image_covered
                 # -- -------------------------------- -- #
                 if bounding_box_checkbox and show_mask_checkbox:
-                    # -- Show both bounding box and mask on image
-                    processed_image.write("In Progress: Hit both bounding and mask on image")
+                        # -- Show both bounding box and mask on image
+                        mask_bound_img = utils.show_box_cv(st.session_state.detections, st.session_state.mask_img.copy())
+                        processed_image.image(mask_bound_img)
                 if bounding_box_checkbox and not show_mask_checkbox:
-                    # -- show only bounding box on original image
-                    processed_image.write("In Progress: Hit only bounding box on image")
+                        # -- show only bounding box on original image
+                        orig_bound_img = utils.show_box_cv(st.session_state.detections, img.copy())
+                        processed_image.image(orig_bound_img)
                 if not bounding_box_checkbox and show_mask_checkbox:
-                    # -- show only mask on original image
-                    processed_image.image(st.session_state.mask_img)
+                        # -- show only mask on original image
+                        processed_image.image(st.session_state.mask_img)
                 if not bounding_box_checkbox and not show_mask_checkbox:
-                    # -- Just show original image
-                    processed_image.image(img)
+                        # -- Just show original image
+                        processed_image.image(img)
     else:
         if st.session_state.is_uploaded:
             st.session_state.clear()

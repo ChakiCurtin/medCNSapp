@@ -43,6 +43,13 @@ def show_box_plt(box, ax):
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=1))    
 
+def show_box_cv(box_s, img):
+    for box in box_s:
+        x1, y1 = box[0], box[1]
+        x2, y2 = box[2], box[3]
+        cv2.rectangle(img, (x1,y1), (x2,y2), color=(255,0,0), thickness=1)
+    return img
+
 # -- [ Get images function ] -- #
 def get_images_old(args: argparse.Namespace):
     images = args.dataset_root / args.dataset / args.set
