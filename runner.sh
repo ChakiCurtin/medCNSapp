@@ -1,1 +1,1 @@
-streamlit run app.py --server.headless true
+streamlit run home.py --server.headless true

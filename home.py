@@ -1,3 +1,4 @@
+from io import BufferedReader, BytesIO
 from pathlib import Path
 import streamlit as st
 import pandas as pd
@@ -10,6 +11,34 @@ from tempfile import NamedTemporaryFile
 import mmcv
 import cv2
 
+# -- [ Page settings ] -- #
+st.set_page_config(page_title="Home | Image Segmenter", 
+                   initial_sidebar_state="expanded",
+                   layout="centered",
+                   menu_items={
+                        'About': " # App made by Chaki Ramesh.\n"
+                        "Used Machine learning and Computer vision techniques to create a object detection -> instance segmentation (semantic) pipeline"
+                        }
+                   )
+# ################################################################## #
+# -- [ Custom CSS STUFF ] -- #
+# -- -- [ allowing hover over image enlargment] -- -- #
+st.markdown(
+    """
+    <style>
+    img {
+        cursor: pointer;
+        transition: all .1s ease-in-out;
+    }
+    img:hover {
+        transform: scale(1.8);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ################################################################## #
 #@st.cache
 @st.cache_resource
 def register():
@@ -53,6 +82,8 @@ def main():
     sidebar_option_subheader = sidebar_options.subheader(subheader_text)
     
     if uploaded_image is not None:
+        if 'uploaded_image' not in st.session_state:
+             st.session_state.uploaded_image = uploaded_image
         with NamedTemporaryFile(dir='.', suffix='.png') as f:
             f.write(uploaded_image.getbuffer())
             img = mmcv.imread(f.name)
@@ -65,15 +96,17 @@ def main():
             if 'image' not in st.session_state:
                 st.session_state.image = img
             # -- ------------------------------ -- #
-            processed_image.image(st.session_state.image)
+            processed_image.image(st.session_state.image, caption=uploaded_image.name)
 
             # -- Check if button has already been pressed -- #
             if "is_processed" not in st.session_state:
                 st.session_state.is_processed = False
             # -- ---------------------------------------- -- #
             cols = st.columns(3)
-            if cols[0].button('Process Image'):
-                    if cols[1].button('Stop Processing'):
+            if 'process_button' not in st.session_state:
+                 st.session_state.process_button = False
+            if cols[0].button('Process Image', disabled=st.session_state.process_button):
+                    if cols[1].button('Stop Processing', disabled=st.session_state.process_button):
                         st.stop()
                     with st.spinner(text='In progress'):
                         bar = st.progress(0)
@@ -86,6 +119,7 @@ def main():
                         st.session_state.is_processed = True
                     
             if st.session_state.is_processed:
+                st.session_state.process_button = True
                 sidebar_option_subheader.subheader("Please choose one of the following options:")
                 bounding_box_checkbox = sidebar_options.checkbox("Show Bounding Box", value=False)
                 show_mask_checkbox = sidebar_options.checkbox("Show Mask", value=True)
@@ -99,28 +133,40 @@ def main():
                     # -- Saving mask + img for future ref -- #
                     st.session_state.mask_img = total_image_covered
                 # -- -------------------------------- -- #
+                show_image = img
                 if bounding_box_checkbox and show_mask_checkbox:
                         # -- Show both bounding box and mask on image
                         mask_bound_img = utils.show_box_cv(st.session_state.detections, st.session_state.mask_img.copy())
-                        processed_image.image(mask_bound_img)
+                        show_image = mask_bound_img
                 if bounding_box_checkbox and not show_mask_checkbox:
                         # -- show only bounding box on original image
                         orig_bound_img = utils.show_box_cv(st.session_state.detections, img.copy())
-                        processed_image.image(orig_bound_img)
+                        show_image = orig_bound_img
                 if not bounding_box_checkbox and show_mask_checkbox:
                         # -- show only mask on original image
-                        processed_image.image(st.session_state.mask_img)
+                        show_image = st.session_state.mask_img
                 if not bounding_box_checkbox and not show_mask_checkbox:
                         # -- Just show original image
-                        processed_image.image(img)
+                        show_image = img
+                processed_image.image(show_image, caption=st.session_state.uploaded_image.name)
+                cols[1].download_button(label="Download", data=download_image(show_image), file_name=st.session_state.uploaded_image.name, mime="image/png")
+
     else:
         if st.session_state.is_uploaded:
             st.session_state.clear()
             st.rerun()
         print("[*] Clearing all variables from session_state as image has been deleted ")
-        
 
-            
+
+def download_image(img):
+    img = img[:, :, [2, 1, 0]] #numpy.ndarray # from bgr to rgb
+    ret, img_enco = cv2.imencode(".png", img)
+    srt_enco = img_enco.tobytes() #bytes
+    img_bytesio = BytesIO(srt_enco) #_io.BytesIO
+    img_bufferedreader = BufferedReader(img_bytesio) #_io.BufferedReader
+    return img_bufferedreader
+
+
             
 if __name__ == "__main__":
     main()
