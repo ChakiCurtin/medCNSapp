@@ -40,13 +40,22 @@ def load_monuseg():
                        "TCGA-HE-7129-01Z-00-DX1", "TCGA-HE-7130-01Z-00-DX1","TCGA-B0-5710-01Z-00-DX1","TCGA-B0-5698-01Z-00-DX1",
                        "TCGA-18-5592-01Z-00-DX1","TCGA-38-6178-01Z-00-DX1","TCGA-49-4488-01Z-00-DX1","TCGA-50-5931-01Z-00-DX1",
                        "TCGA-21-5784-01Z-00-DX1","TCGA-21-5786-01Z-00-DX1","TCGA-G9-6336-01Z-00-DX1","TCGA-G9-6348-01Z-00-DX1",
+                       "TCGA-G9-6356-01Z-00-DX1","TCGA-G9-6363-01Z-00-DX1","TCGA-CH-5767-01Z-00-DX1","TCGA-G9-6362-01Z-00-DX1",
+                       "TCGA-DK-A2I6-01A-01-TS1","TCGA-G2-A2EK-01A-02-TSB","TCGA-AY-A8YK-01A-01-TS1","TCGA-NH-A8F7-01A-01-TS1",
+                       "TCGA-KB-A93J-01A-01-TS1","TCGA-RD-A8N9-01A-01-TS1","TCGA-AC-A2FO-01A-01-TS1","TCGA-AO-A0J2-01A-01-BSA",
+                       "TCGA-2Z-A9J9-01A-01-TS1","TCGA-GL-6846-01A-01-BS1","TCGA-IZ-8196-01A-01-BS1",
                        ],
         "Organ": ["Breast", "Breast", "Breast", "Breast", "Breast", 
                   "Breast","Kidney", "Kidney", "Kidney", "Kidney",
                   "Kidney","Kidney","Liver","Liver","Liver","Liver","Liver",
-                  "Liver","Prostate","Prostate",
+                  "Liver","Prostate","Prostate","Prostate","Prostate","Prostate","Prostate",
+                  "Bladder","Bladder","Colon","Colon","Stomach","Stomach","Breast","Breast","Kidney","Kidney","Kidney",
                   ],
-        "Num of Organ": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,],
+        "Set": ["train","train","train","train","train","train","train","train","train",
+                "train","train","train","train","train","train","train","train","train",
+                "train","train","train","train","train","train","train","train","train",
+                "train","train","train","test","test","test","test","test",],
+        "Num of Organ": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,],
         "Disease type": ["Breast invasive carcinoma","Breast invasive carcinoma","Breast invasive carcinoma",
                          "Breast invasive carcinoma","Breast invasive carcinoma","Breast invasive carcinoma",
                          "Kidney renal clear cell carcinoma","Kidney renal papillary cell carcinoma",
@@ -54,7 +63,12 @@ def load_monuseg():
                          "Kidney renal clear cell carcinoma","Kidney renal clear cell carcinoma",
                          "Lung squamous cell carcinoma","Lung adenocarcinoma","Lung adenocarcinoma",
                          "Lung adenocarcinoma","Lung squamous cell carcinoma","Lung squamous cell carcinoma",
-                         "Prostate adenocarcinoma","Prostate adenocarcinoma",
+                         "Prostate adenocarcinoma","Prostate adenocarcinoma","Prostate adenocarcinoma",
+                         "Prostate adenocarcinoma","Prostate adenocarcinoma","Prostate adenocarcinoma",
+                         "Bladder Urothelial Carcinoma","Bladder Urothelial Carcinoma","Colon adenocarcinoma",
+                         "Colon adenocarcinoma","Stomach adenocarcinoma","Stomach adenocarcinoma",
+                         "Breast Invasive Carcinoma","Breast Invasive Carcinoma","Kidney renal papillary cell carcinoma",
+                         "Kidney renal papillary cell carcinoma","Kidney renal papillary cell carcinoma",
                          ],
         }, orient="columns")
 
@@ -63,6 +77,7 @@ def monuseg():
     df_mutate = load_monuseg()
     df_mutate.drop(columns='Num of Organ', axis=1, inplace=True)
     cols = st.columns(2)
+    url = "https://monuseg.grand-challenge.org/Data/"
     # a quick about section for MoNuSeg:
     cols[0].write("About MoNuSeg: \n\nMoNuSeg is a publicly available Cell Nuceli Segmentation (CNS) dataset containing H&E stained WSIs." +
                   " It contains 51 images, with 37 in the training set and 14 in the test set." +
@@ -71,7 +86,8 @@ def monuseg():
                   " nuclei are all considered to be the same. Every image comes" +
                   " as a 1000 × 1000 pixel region of interest (ROI)." +
                   " All Images come from The Cancer Genome Atlas, which is the world's largest digital slide repository." + 
-                  " Originally created for The Grand Challenge, it is a well known dataset for nuclei segmentation."
+                  " Originally created for The Grand Challenge, it is a well known dataset for nuclei segmentation." +
+                  " Full MoNuSeg dataset download [link](%s)." % url 
                   )
     cols[0].divider()
     #cols[0].checkbox("Use container width", value=True, key="use_container_width")
@@ -103,7 +119,7 @@ def monuseg():
         colss = cols[1].columns(n)
         for i, image_file in enumerate(group):
             colss[i].image(image_file)
-        
+
     
 
 
@@ -127,6 +143,7 @@ def main():
     cols = st.columns(3)
     cols[1].header(f"{dataset_option} Dataset")
     dataset_selector(dataset_option=str(dataset_option).lower())() # makes a function from dict of functions
+    st.sidebar.divider()
 
 
 if __name__ == "__main__":

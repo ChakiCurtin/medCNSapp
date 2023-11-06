@@ -31,7 +31,7 @@ st.markdown(
         transition: all .1s ease-in-out;
     }
     img:hover {
-        transform: scale(1.8);
+        transform: scale(1.1);
     }
     </style>
     """,
