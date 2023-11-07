@@ -1,0 +1,6 @@
+[theme]
+base="dark"
+primaryColor="lightblue"
+#backgroundColor = '#273346'
+backgroundColor = '#000000'
+secondaryBackgroundColor = '#1e1e1e'

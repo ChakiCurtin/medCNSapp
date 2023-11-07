@@ -18,7 +18,8 @@ st.set_page_config(page_title="Home | Image Segmenter",
                    menu_items={
                         'About': " # App made by Chaki Ramesh.\n"
                         "Used Machine learning and Computer vision techniques to create a object detection -> instance segmentation (semantic) pipeline"
-                        }
+                        },
+                        
                    )
 # ################################################################## #
 # -- [ Custom CSS STUFF ] -- #
@@ -44,6 +45,9 @@ st.markdown(
 def register():
     registers.registerstuff()
 
+# TODO: Add multiple models for processing images. 
+# Bounding boxes should still be able to be extracted and added. Semantic segmentation methods like UNET and DEEPLAB and
+# Current pipeline methods for mmyolo, rtmdet with SAM should be added
 def process_image(path_img, image, bar):
     config = Path("./20230928_012708.py")
     pathfile = Path("epoch_800.pth")
@@ -75,6 +79,7 @@ def main():
     if 'is_uploaded' not in st.session_state:
         st.session_state.is_uploaded = False
     uploaded_image = st.sidebar.file_uploader("Upload H&E stained image (png)", type=["png"], disabled=st.session_state.is_uploaded)
+    # TODO - Add multi image input (list of images for processing)
     st.sidebar.divider()
     sidebar_options = st.sidebar
     sidebar_options.markdown("<h1 style='text-align: center; font-size: 40px'>Options</h1>", unsafe_allow_html=True)
