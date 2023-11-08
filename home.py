@@ -1,14 +1,10 @@
 from io import BufferedReader, BytesIO
 from pathlib import Path
 import streamlit as st
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import time
 import utils 
 import registers
 from tempfile import NamedTemporaryFile
-import mmcv
 import cv2
 
 # -- [ Page settings ] -- #
@@ -19,7 +15,6 @@ st.set_page_config(page_title="Home | Image Segmenter",
                         'About': " # App made by Chaki Ramesh.\n"
                         "Used Machine learning and Computer vision techniques to create a object detection -> instance segmentation (semantic) pipeline"
                         },
-                        
                    )
 # ################################################################## #
 # -- [ Custom CSS STUFF ] -- #
@@ -38,6 +33,14 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+# -- [ "Remove the "made with streamlit" at the footer of the page]
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 # ################################################################## #
 #@st.cache
@@ -71,7 +74,6 @@ def process_image(path_img, image, bar):
 
 
 def main():
-    register()
     st.sidebar.title("Pipeline: Object Detection -> Semantic Segmentation")
     st.sidebar.divider()
     st.sidebar.header("Upload nuclei image:")
@@ -91,8 +93,7 @@ def main():
              st.session_state.uploaded_image = uploaded_image
         with NamedTemporaryFile(dir='.', suffix='.png') as f:
             f.write(uploaded_image.getbuffer())
-            img = mmcv.imread(f.name)
-            img = mmcv.imconvert(img, 'bgr', 'rgb')
+            img = cv2.imread(f.name)
             if not st.session_state.is_uploaded:
                 st.session_state.is_uploaded = True
                 st.rerun()
@@ -118,7 +119,6 @@ def main():
                         detections, processed_mask = process_image(f.name, img, bar)
                         if 'detections' not in st.session_state:
                              st.session_state.detections = detections
-                        #processed_mask = img
                         bar.progress(100)
                         st.success('Done')
                         st.session_state.is_processed = True
@@ -165,7 +165,7 @@ def main():
 
 def download_image(img):
     img = img[:, :, [2, 1, 0]] #numpy.ndarray # from bgr to rgb
-    ret, img_enco = cv2.imencode(".png", img)
+    _, img_enco = cv2.imencode(".png", img)
     srt_enco = img_enco.tobytes() #bytes
     img_bytesio = BytesIO(srt_enco) #_io.BytesIO
     img_bufferedreader = BufferedReader(img_bytesio) #_io.BufferedReader
@@ -174,4 +174,5 @@ def download_image(img):
 
             
 if __name__ == "__main__":
+    register()
     main()

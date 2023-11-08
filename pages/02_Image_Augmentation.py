@@ -3,6 +3,20 @@ from tempfile import NamedTemporaryFile
 import cv2
 from streamlit_image_comparison import image_comparison
 
+st.set_page_config(page_title="Image Augmentation", 
+                   initial_sidebar_state="expanded", 
+                   layout="wide")
+
+# -- ## -- CUSTOM CSS -- ## -- #
+# -- [ "Remove the "made with streamlit" at the footer of the page]
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
 def preproc_selector(preproc_option: str):
     dataset_dict = {
         "stain normalisation": stain_norm,
@@ -25,7 +39,6 @@ def clahe(image, clahe_thresh):
     return image
 
 def main():
-    st.set_page_config(page_title="Image Augmentation", initial_sidebar_state="expanded", layout="wide")
     st.markdown(
     """
     <style>

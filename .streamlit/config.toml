@@ -3,4 +3,6 @@ base="dark"
 primaryColor="lightblue"
 #backgroundColor = '#273346'
 backgroundColor = '#000000'
-secondaryBackgroundColor = '#1e1e1e'
+#secondaryBackgroundColor = '#1e1e1e'
+secondaryBackgroundColor = '#141414' # <- better 
+#secondaryBackgroundColor = '#000000'

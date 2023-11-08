@@ -8,7 +8,31 @@ import glob
 # * https://plotly.com/python/builtin-colorscales/
 # * https://github.com/Delgan/loguru
 # * 
+st.set_page_config(page_title="Dataset Selector", 
+                   initial_sidebar_state="expanded",
+                   layout="wide")
 
+# -- ## -- CUSTOM CSS -- ## -- #
+# -- [ "Remove the "made with streamlit" at the footer of the page]
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+# -- ### - CONSTANTS - ### - #
+KIDNEY_RENAL = "Kidney renal clear cell carcinoma"
+BREAST_INVASIVE = "Breast invasive carcinoma"
+KIDNEY_PAPILLARY = "Kidney renal papillary cell carcinoma"
+LUNG_SQUAMOUS = "Lung squamous cell carcinoma"
+LUNG_ADENO = "Lung adenocarcinoma"
+PROST_ADENO = "Prostate adenocarcinoma"
+BLADDER_URO = "Bladder Urothelial Carcinoma"
+COLON_ADENO = "Colon adenocarcinoma"
+STOMACH_ADENO = "Stomach adenocarcinoma"
+# -- ################################ -- #
 @st.cache_data
 def load_images():
     image_files = glob.glob("images/MoNuSeg/*/*.png")
@@ -56,19 +80,18 @@ def load_monuseg():
                 "train","train","train","train","train","train","train","train","train",
                 "train","train","train","test","test","test","test","test",],
         "Num of Organ": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,],
-        "Disease type": ["Breast invasive carcinoma","Breast invasive carcinoma","Breast invasive carcinoma",
-                         "Breast invasive carcinoma","Breast invasive carcinoma","Breast invasive carcinoma",
-                         "Kidney renal clear cell carcinoma","Kidney renal papillary cell carcinoma",
-                         "Kidney renal papillary cell carcinoma","Kidney renal papillary cell carcinoma",
-                         "Kidney renal clear cell carcinoma","Kidney renal clear cell carcinoma",
-                         "Lung squamous cell carcinoma","Lung adenocarcinoma","Lung adenocarcinoma",
-                         "Lung adenocarcinoma","Lung squamous cell carcinoma","Lung squamous cell carcinoma",
-                         "Prostate adenocarcinoma","Prostate adenocarcinoma","Prostate adenocarcinoma",
-                         "Prostate adenocarcinoma","Prostate adenocarcinoma","Prostate adenocarcinoma",
-                         "Bladder Urothelial Carcinoma","Bladder Urothelial Carcinoma","Colon adenocarcinoma",
-                         "Colon adenocarcinoma","Stomach adenocarcinoma","Stomach adenocarcinoma",
-                         "Breast Invasive Carcinoma","Breast Invasive Carcinoma","Kidney renal papillary cell carcinoma",
-                         "Kidney renal papillary cell carcinoma","Kidney renal papillary cell carcinoma",
+        "Disease type": [BREAST_INVASIVE,BREAST_INVASIVE,BREAST_INVASIVE,
+                         BREAST_INVASIVE,BREAST_INVASIVE,BREAST_INVASIVE,
+                         KIDNEY_RENAL,KIDNEY_PAPILLARY,KIDNEY_PAPILLARY,
+                         KIDNEY_PAPILLARY,KIDNEY_RENAL,KIDNEY_RENAL,
+                         LUNG_SQUAMOUS,LUNG_ADENO,LUNG_ADENO,
+                         LUNG_ADENO,LUNG_SQUAMOUS,LUNG_SQUAMOUS,
+                         PROST_ADENO,PROST_ADENO,PROST_ADENO,
+                         PROST_ADENO,PROST_ADENO,PROST_ADENO,
+                         BLADDER_URO,BLADDER_URO,COLON_ADENO,
+                         COLON_ADENO,STOMACH_ADENO,STOMACH_ADENO,
+                         BREAST_INVASIVE,BREAST_INVASIVE,KIDNEY_PAPILLARY,
+                         KIDNEY_PAPILLARY,KIDNEY_PAPILLARY,
                          ],
         }, orient="columns")
 
@@ -133,7 +156,7 @@ def tnbc():
     st.write("TNBC WIP")
 
 def main():
-    st.set_page_config(page_title="Dataset Selector", initial_sidebar_state="expanded", layout="wide")
+    
     dataset_option = st.sidebar.selectbox(
         label="Choose Dataset to view:",
         options=('MoNuSeg', 'MoNuSAC', 'CryoNuSeg', 'TNBC'),
