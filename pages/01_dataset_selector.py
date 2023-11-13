@@ -122,7 +122,10 @@ def monuseg():
                        values="Num of Organ",
                        names="Organ",
                        hole=0.4,
+                       width=700,
+                       height=550,
                        color_discrete_sequence=px.colors.sequential.Turbo,
+                       #color_discrete_sequence=px.colors.sequential.RdBu,
                        )
     cols[1].plotly_chart(pie_chart)
     cols[1].divider()
@@ -143,9 +146,6 @@ def monuseg():
         for i, image_file in enumerate(group):
             colss[i].image(image_file)
 
-    
-
-
 def cryonuseg():
     st.write("CryoNuSeg WIP")
 
@@ -156,7 +156,6 @@ def tnbc():
     st.write("TNBC WIP")
 
 def main():
-    
     dataset_option = st.sidebar.selectbox(
         label="Choose Dataset to view:",
         options=('MoNuSeg', 'MoNuSAC', 'CryoNuSeg', 'TNBC'),

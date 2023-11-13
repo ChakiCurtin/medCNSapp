@@ -75,19 +75,32 @@ def process_image(path_img, image, bar):
 
 def main():
     st.sidebar.title("Pipeline: Object Detection -> Semantic Segmentation")
-    st.sidebar.divider()
-    st.sidebar.header("Upload nuclei image:")
+    #st.sidebar.divider()
+    side_tab_settings, side_tab_image_upload, side_tab_options = st.sidebar.tabs(["\u2001\u2001\u2001Settings\u2001\u2001\u2001",
+                                                                                   "\u2001\u2001\u2001Image Upload\u2001\u2001\u2001" ,
+                                                                                   "\u2001\u2001\u2001Options\u2001\u2001\u2001"])
+    
+    # -- [ SETTINGS TAB INFO ] -- #
+    side_tab_settings.title("Choose Model:")
+    side_tab_settings.selectbox(label="Choose Model Range",
+                                options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation',))
+
+    # -- [ IMAGE UPLOAD TAB INFO ] -- #
+    side_tab_image_upload.header("Upload nuclei image:")
     # -- [ Disable uploader once upload has been done] -- #
     if 'is_uploaded' not in st.session_state:
         st.session_state.is_uploaded = False
-    uploaded_image = st.sidebar.file_uploader("Upload H&E stained image (png)", type=["png"], disabled=st.session_state.is_uploaded)
+    uploaded_image = side_tab_image_upload.file_uploader("Upload H&E stained image (png)", type=["png"], disabled=st.session_state.is_uploaded)
     # TODO - Add multi image input (list of images for processing)
-    st.sidebar.divider()
-    sidebar_options = st.sidebar
+
+    # -- [ OPTIONS TAB INFO ] -- #
+    sidebar_options = side_tab_options
     sidebar_options.markdown("<h1 style='text-align: center; font-size: 40px'>Options</h1>", unsafe_allow_html=True)
     subheader_text = "Please Process Image for Options"
     sidebar_option_subheader = sidebar_options.subheader(subheader_text)
-    
+
+
+
     if uploaded_image is not None:
         if 'uploaded_image' not in st.session_state:
              st.session_state.uploaded_image = uploaded_image

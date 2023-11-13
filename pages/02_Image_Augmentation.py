@@ -54,7 +54,7 @@ def main():
         captions=None,
     )
     if preproc_option == "CLAHE":
-        st.write("**Contrast Limited Adaptive Histogram Equalization (CLAHE)**")
+        st.markdown("**Contrast Limited Adaptive Histogram Equalization (CLAHE)**")
     st.sidebar.divider()
     if 'is_uploaded' not in st.session_state:
         st.session_state.is_uploaded = False
