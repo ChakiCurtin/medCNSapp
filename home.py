@@ -72,18 +72,41 @@ def process_image(path_img, image, bar):
     # -- return the mask -- #
     return detections, batched_mask
 
-
 def main():
-    st.sidebar.title("Pipeline: Object Detection -> Semantic Segmentation")
-    #st.sidebar.divider()
+    st.sidebar.title("Single Cell Nuclei Segmentation")
     side_tab_settings, side_tab_image_upload, side_tab_options = st.sidebar.tabs(["\u2001\u2001\u2001Settings\u2001\u2001\u2001",
                                                                                    "\u2001\u2001\u2001Image Upload\u2001\u2001\u2001" ,
-                                                                                   "\u2001\u2001\u2001Options\u2001\u2001\u2001"])
+                                                                                   "\u2001\u2001\u2001Options\u2001\u2001\u2001"
+                                                                                   ])                                 
     
     # -- [ SETTINGS TAB INFO ] -- #
     side_tab_settings.title("Choose Model:")
-    side_tab_settings.selectbox(label="Choose Model Range",
-                                options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation',))
+    model_option = side_tab_settings.selectbox(label="Choose Model Range",
+                                options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation',),
+                                index=None,
+                                placeholder="Choose a Model Type",
+                                )
+
+    if model_option is not None:
+        overall_model = None
+        if model_option == "Semantic Segmentation":
+            overall_model = side_tab_settings.radio(label=" ",
+                                                      options=["U-Net","Deeplabv3+",],
+                                                      captions=["Popular in medical research","Newer and and upgrade over U-Net"])
+        elif model_option == "Object Detection":
+            overall_model = side_tab_settings.radio(label=" ",
+                                                      options=["MMYOLOv8","Yolov8",],
+                                                      captions=["OpenMMLab implementation of Yolov8","The original Yolov8"])
+        elif model_option == "Pipeline: Object Detection -> Semantic Segmentation":
+             overall_model = side_tab_settings.radio(label=" ",
+                                                      options=["MMYOLO -> SAM"],
+                                                      captions=["Object detection through MMYOLO with Segment anything model (SAM)"])
+             
+        st.session_state.model_option = model_option
+    else:
+         if "model_option" in st.session_state:
+              del st.session_state.model_option
+         
 
     # -- [ IMAGE UPLOAD TAB INFO ] -- #
     side_tab_image_upload.header("Upload nuclei image:")
@@ -125,16 +148,20 @@ def main():
             if 'process_button' not in st.session_state:
                  st.session_state.process_button = False
             if cols[0].button('Process Image', disabled=st.session_state.process_button):
-                    if cols[1].button('Stop Processing', disabled=st.session_state.process_button):
+                    if "model_option" in st.session_state:
+                        if cols[1].button('Stop Processing', disabled=st.session_state.process_button):
+                            st.stop()
+                        with st.spinner(text='In progress'):
+                            bar = st.progress(0)
+                            detections, processed_mask = process_image(f.name, img, bar)
+                            if 'detections' not in st.session_state:
+                                st.session_state.detections = detections
+                            bar.progress(100)
+                            st.success('Done')
+                            st.session_state.is_processed = True
+                    else:
+                        st.warning("Please Choose a model in the 'Settings' tab on the left (sidebar)")
                         st.stop()
-                    with st.spinner(text='In progress'):
-                        bar = st.progress(0)
-                        detections, processed_mask = process_image(f.name, img, bar)
-                        if 'detections' not in st.session_state:
-                             st.session_state.detections = detections
-                        bar.progress(100)
-                        st.success('Done')
-                        st.session_state.is_processed = True
                     
             if st.session_state.is_processed:
                 st.session_state.process_button = True
