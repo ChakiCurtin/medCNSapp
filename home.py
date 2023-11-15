@@ -117,11 +117,9 @@ def main():
     # TODO - Add multi image input (list of images for processing)
 
     # -- [ OPTIONS TAB INFO ] -- #
-    sidebar_options = side_tab_options
-    sidebar_options.markdown("<h1 style='text-align: center; font-size: 40px'>Options</h1>", unsafe_allow_html=True)
+    side_tab_options.markdown("<h1 style='text-align: center; font-size: 40px'>Options</h1>", unsafe_allow_html=True)
     subheader_text = "Please Process Image for Options"
-    sidebar_option_subheader = sidebar_options.subheader(subheader_text)
-
+    sidebar_option_subheader = side_tab_options.subheader(subheader_text)
 
 
     if uploaded_image is not None:
@@ -166,8 +164,8 @@ def main():
             if st.session_state.is_processed:
                 st.session_state.process_button = True
                 sidebar_option_subheader.subheader("Please choose one of the following options:")
-                bounding_box_checkbox = sidebar_options.checkbox("Show Bounding Box", value=False)
-                show_mask_checkbox = sidebar_options.checkbox("Show Mask", value=True)
+                bounding_box_checkbox = side_tab_options.checkbox("Show Bounding Box", value=False)
+                show_mask_checkbox = side_tab_options.checkbox("Show Mask", value=True)
 
                 # -- Process the mask and output the overlay -- #
                 if "mask_img" not in st.session_state:

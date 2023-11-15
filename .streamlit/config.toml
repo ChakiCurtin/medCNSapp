@@ -6,3 +6,8 @@ backgroundColor = '#000000'
 #secondaryBackgroundColor = '#1e1e1e'
 secondaryBackgroundColor = '#141414' # <- better 
 #secondaryBackgroundColor = '#000000'
+
+[server]
+headless = true
+enableCORS=true
+port = 8501
