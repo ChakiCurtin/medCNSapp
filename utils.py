@@ -72,7 +72,7 @@ def mmyolo_init(config, pathfile):
 @st.cache_resource
 def sam_init():
     sys.path.append("..")
-    sam_checkpoint = "sam_vit_h_4b8939.pth"
+    sam_checkpoint = "models/sam/sam_vit_h_4b8939.pth"
     model_type = "vit_h"
     device = "cuda"
     sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
