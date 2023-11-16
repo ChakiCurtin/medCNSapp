@@ -1,4 +1,6 @@
 from io import BufferedReader, BytesIO
+from mmengine import Config
+from mmseg.apis import init_model, inference_model
 from pathlib import Path
 import streamlit as st
 import numpy as np
@@ -48,6 +50,94 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 def register():
     registers.registerstuff()
 
+def models_selector(chosen_model:str):
+    models_dict = {
+        "U-Net": unet_processor,
+        "Deeplabv3+": deeplab_processor,
+        "MMYOLOv8": mmyolo_processor,
+        "Yolov8": yolo_processor,
+        "MMYOLO -> SAM": process_image_pipeline,
+     }
+    return models_dict.get(chosen_model)
+
+def show_selector(chosen_model:str):
+    models_dict = {
+        "U-Net": unet_show,
+        "Deeplabv3+": deeplab_show,
+        "MMYOLOv8": mmyolo_show,
+        "Yolov8": yolo_show,
+        "MMYOLO -> SAM": pipeline_show,
+     }
+    return models_dict.get(chosen_model)
+     
+def unet_processor(path_img, image, bar):
+    config = Path("./models/semantic/unet/unet_test/unet.py")
+    pathfile = Path("./models/semantic/unet/unet_test/iter_20000.pth")
+    cfg = Config.fromfile(config)
+    bar.progress(20)
+    model = init_model(cfg, str(pathfile), 'cuda:0')
+    bar.progress(30)
+    classes = model.dataset_meta['classes']
+    palette = model.dataset_meta['palette']
+    bar.progress(40)
+    pred = process_images(path_img, model, classes, palette)
+    bar.progress(100)
+    st.image(pred)
+
+def deeplab_processor(path_img, image, bar):
+    config = Path("./models/semantic/deeplab/deeplab_test/deeplab.py")
+    pathfile = Path("./models/semantic/deeplab/deeplab_test/iter_20000.pth")
+    cfg = Config.fromfile(config)
+    bar.progress(20)
+    model = init_model(cfg, str(pathfile), 'cuda:0')
+    bar.progress(30)
+    classes = model.dataset_meta['classes']
+    palette = model.dataset_meta['palette']
+    bar.progress(40)
+    pred = process_images(path_img, model, classes, palette)
+    bar.progress(100)
+    st.image(pred)
+
+def process_images(path_img, model, classes, palette):
+    img = cv2.imread(path_img)
+    result = inference_model(model, img)
+    mask = utils.numpy_from_result(result=result)
+    dest = mask_overlay(img, mask, classes, palette)
+    return dest
+
+def mask_overlay(img, mask, classes, palette):
+    dest = img.copy()
+    labels = np.unique(mask)
+
+    for label in labels:
+        # skipping background (ugly in visualisations)
+        if classes[label].lower() in ["background", "bg"]:
+            continue
+        binary_mask = (mask == label)
+        colour_mask = np.zeros_like(img)
+        # -- Skipping outline for now
+        colour_mask[...] = palette[label]
+        dest[binary_mask] = cv2.addWeighted(img, 1 - 0.5, colour_mask, 0.5, 0)[binary_mask]
+    return dest 
+
+def mmyolo_processor(path_img, image, bar):
+    return "mmyolo"
+
+def yolo_processor(path_img, image, bar):
+    return "yolo"
+
+def unet_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+    return "unet"
+
+def deeplab_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+    return "deep"
+
+def mmyolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+    return "mmyolo"
+
+def yolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+    return "yolo"
+
 # TODO: Add multiple models for processing images. 
 # Bounding boxes should still be able to be extracted and added. Semantic segmentation methods like UNET and DEEPLAB and
 # Current pipeline methods for mmyolo, rtmdet with SAM should be added
@@ -69,10 +159,11 @@ def process_image_pipeline(path_img, image, bar):
     # -- process these masks into one image array -- #
     batched_mask = utils.masks_array_sam(masks_list=masks_list)
     bar.progress(90)
-    # -- return the mask -- #
-    return detections, batched_mask
+    # -- add the mask to current session-- #
+    st.session_state.detections = detections
+    st.session_state.batched_mask = batched_mask
 
-def pipeline_processed(batched_mask, processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+def pipeline_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
     sidebar_option_subheader.subheader("Please choose one of the following options:")
     bounding_box_checkbox = side_tab_options.checkbox("Show Bounding Box", value=False)
     show_mask_checkbox = side_tab_options.checkbox("Show Mask", value=True)
@@ -80,7 +171,7 @@ def pipeline_processed(batched_mask, processed_image, og_img,sidebar_option_subh
     # -- Process the mask and output the overlay -- #
     if "mask_img" not in st.session_state:
         total_image = og_img.copy()
-        batched_mask = np.asarray(batched_mask) * 255
+        batched_mask = np.asarray(st.session_state.batched_mask) * 255
         batched_mask = cv2.cvtColor(batched_mask.astype(np.float32), cv2.COLOR_RGBA2RGB)
         total_image_covered = cv2.bitwise_or(total_image, batched_mask.astype(np.uint8))
         # -- Saving mask + img for future ref -- #
@@ -127,22 +218,22 @@ def main():
                                                       captions=["Popular in medical research","Newer and and upgrade over U-Net"])
             side_tab_settings.divider()
             side_tab_settings.warning("Semantic segmentation models do not show bounding boxes around the seperate nuclei, it will only show mask on image.")
+            side_tab_settings.warning("The model was trained on the MoNuSeg dataset.")
         elif model_option == "Object Detection":
             overall_model = side_tab_settings.radio(label=" ",
                                                       options=["MMYOLOv8","Yolov8",],
                                                       captions=["OpenMMLab implementation of Yolov8","The original Yolov8"])
             side_tab_settings.divider()
             side_tab_settings.warning("Object detection models do not show mask, only a bounding box around the seperate detected nuceli.")
-
+            side_tab_settings.warning("The model was trained on the MoNuSeg dataset.")
         elif model_option == "Pipeline: Object Detection -> Semantic Segmentation":
             overall_model = side_tab_settings.radio(label=" ",
                                                       options=["MMYOLO -> SAM"],
                                                       captions=["Object detection through MMYOLO with Segment anything model (SAM)"])
             side_tab_settings.divider()
             side_tab_settings.warning("The pipeline will use the chosen object detector for the input bounding boxes which will then be used with the segment anything model (SAM) to produce the mask around the detected nuceli.")
-
-             
-        st.session_state.model_option = model_option
+            side_tab_settings.warning("The model was trained on the MoNuSeg dataset.")
+        st.session_state.model_option = overall_model
 
     # -- [ IMAGE UPLOAD TAB INFO ] -- #
     side_tab_image_upload.header("Upload nuclei image:")
@@ -157,10 +248,9 @@ def main():
     subheader_text = "Please Process Image for Options"
     sidebar_option_subheader = side_tab_options.subheader(subheader_text)
 
-
     if uploaded_image is not None:
         if 'uploaded_image' not in st.session_state:
-             st.session_state.uploaded_image = uploaded_image
+            st.session_state.uploaded_image = uploaded_image
         with NamedTemporaryFile(dir='.', suffix='.png') as f:
             f.write(uploaded_image.getbuffer())
             img = cv2.imread(f.name)
@@ -187,11 +277,7 @@ def main():
                             st.stop()
                         with st.spinner(text='In progress'):
                             bar = st.progress(0)
-                            detections, processed_mask = process_image_pipeline(f.name, img, bar)
-                            if 'detections' not in st.session_state:
-                                st.session_state.detections = detections
-                            if "processed_mask" not in st.session_state:
-                                 st.session_state.processed_mask = processed_mask
+                            models_selector(st.session_state.model_option)(f.name, img, bar)
                             bar.progress(100)
                             st.success('Done')
                             st.session_state.is_processed = True
@@ -201,44 +287,12 @@ def main():
                     
             if st.session_state.is_processed:
                 st.session_state.process_button = True
-                # sidebar_option_subheader.subheader("Please choose one of the following options:")
-                # bounding_box_checkbox = side_tab_options.checkbox("Show Bounding Box", value=False)
-                # show_mask_checkbox = side_tab_options.checkbox("Show Mask", value=True)
-
-                # # -- Process the mask and output the overlay -- #
-                # if "mask_img" not in st.session_state:
-                #     total_image = img.copy()
-                #     processed_mask = np.asarray(processed_mask) * 255
-                #     processed_mask = cv2.cvtColor(processed_mask.astype(np.float32), cv2.COLOR_RGBA2RGB)
-                #     total_image_covered = cv2.bitwise_or(total_image, processed_mask.astype(np.uint8))
-                #     # -- Saving mask + img for future ref -- #
-                #     st.session_state.mask_img = total_image_covered
-                # # -- -------------------------------- -- #
-                # show_image = img
-                # if bounding_box_checkbox and show_mask_checkbox:
-                #         # -- Show both bounding box and mask on image
-                #         mask_bound_img = utils.show_box_cv(st.session_state.detections, st.session_state.mask_img.copy())
-                #         show_image = mask_bound_img
-                # if bounding_box_checkbox and not show_mask_checkbox:
-                #         # -- show only bounding box on original image
-                #         orig_bound_img = utils.show_box_cv(st.session_state.detections, img.copy())
-                #         show_image = orig_bound_img
-                # if not bounding_box_checkbox and show_mask_checkbox:
-                #         # -- show only mask on original image
-                #         show_image = st.session_state.mask_img
-                # if not bounding_box_checkbox and not show_mask_checkbox:
-                #         # -- Just show original image
-                #         show_image = img
-                # processed_image.image(show_image, caption=st.session_state.uploaded_image.name)
-
-                # cols[1].download_button(label="Download", data=download_image(show_image), file_name=st.session_state.uploaded_image.name, mime="image/png")
-                pipeline_processed(batched_mask=st.session_state.processed_mask, 
-                                   main_col_1=cols[1],
-                                   og_img=img,
-                                   processed_image=processed_image,
-                                   side_tab_options=side_tab_options,
-                                   sidebar_option_subheader=sidebar_option_subheader,
-                                   )
+                show_selector(st.session_state.model_option)(processed_image=processed_image,
+                                                             side_tab_options=side_tab_options,
+                                                             sidebar_option_subheader=sidebar_option_subheader,
+                                                             main_col_1=cols[1],
+                                                             og_img=img,
+                                                             )
     else:
         st.warning("Please use the sidebar <- to choose the model, upload the image for processing.")
         print("[*] Clearing local variables stored in cache for the image")
@@ -257,6 +311,9 @@ def main():
         if 'detections' in st.session_state:
             del st.session_state.detections
             print("[**] cleared detections")
+        if "batched_mask" in st.session_state:
+            del st.session_state.batched_mask
+            print("[**] cleared batched_mask")
         if "mask_img" in st.session_state:
             del st.session_state.mask_img
             print("[**] cleared mask_img")

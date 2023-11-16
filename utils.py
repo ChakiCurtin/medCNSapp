@@ -2,6 +2,7 @@
 import torch
 from mmdet.apis import init_detector, inference_detector
 from mmdet.registry import VISUALIZERS
+from mmseg.structures import SegDataSample
 import argparse 
 import sys
 import numpy as np
@@ -139,4 +140,28 @@ def masks_array_sam(masks_list):
         batched_mask = cv2.bitwise_or(batched_mask, masked_out_list[ii])
     
     return batched_mask
+
+def numpy_from_result(result: SegDataSample, squeeze: bool = True, as_uint: bool = True) -> np.ndarray:
+    """Converts an mmsegmentation inference result into a numpy array (for exporting and visualisation)
+
+    Parameters
+    ----------
+    result : SegDataSample
+        The segmentation results to extract the numpy array from
+    squeeze : bool, optional
+        Squeezes down useless dimensions (mainly for binary segmentation), by default True
+    as_uint : bool, optional
+        Converts the array to uint8 format, instead of (usually) int64, by default True
+
+    Returns
+    -------
+    np.ndarray
+        The extracted numpy array
+    """    
+    array: np.ndarray = result.pred_sem_seg.cpu().numpy().data
+    if squeeze:
+        array = array.squeeze()
+    if as_uint:
+        array = array.astype(np.uint8)
+    return array
 
