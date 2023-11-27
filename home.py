@@ -8,6 +8,7 @@ import utils
 import registers
 from tempfile import NamedTemporaryFile
 import cv2
+import plotly.express as px
 
 # -- [ Page settings ] -- #
 st.set_page_config(page_title="Home | Image Segmenter", 
@@ -62,8 +63,8 @@ def models_selector(chosen_model:str):
 
 def show_selector(chosen_model:str):
     models_dict = {
-        "U-Net": unet_show,
-        "Deeplabv3+": deeplab_show,
+        "U-Net": semantic_show,
+        "Deeplabv3+": semantic_show,
         "MMYOLOv8": mmyolo_show,
         "Yolov8": yolo_show,
         "MMYOLO -> SAM": pipeline_show,
@@ -82,7 +83,8 @@ def unet_processor(path_img, image, bar):
     bar.progress(40)
     pred = process_images(path_img, model, classes, palette)
     bar.progress(100)
-    st.image(pred)
+    # -- add the mask to current session-- #
+    st.session_state.batched_mask = pred
 
 def deeplab_processor(path_img, image, bar):
     config = Path("./models/semantic/deeplab/deeplab_test/deeplab.py")
@@ -92,11 +94,13 @@ def deeplab_processor(path_img, image, bar):
     model = init_model(cfg, str(pathfile), 'cuda:0')
     bar.progress(30)
     classes = model.dataset_meta['classes']
-    palette = model.dataset_meta['palette']
+    palette = "255,77,255"
     bar.progress(40)
     pred = process_images(path_img, model, classes, palette)
     bar.progress(100)
-    st.image(pred)
+    # -- add the mask to current session-- #
+    st.session_state.batched_mask = pred
+    
 
 def process_images(path_img, model, classes, palette):
     img = cv2.imread(path_img)
@@ -126,17 +130,25 @@ def mmyolo_processor(path_img, image, bar):
 def yolo_processor(path_img, image, bar):
     return "yolo"
 
-def unet_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
-    return "unet"
+def semantic_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+    sidebar_option_subheader.subheader("Please choose one of the following options:")
+    show_mask_checkbox = side_tab_options.checkbox("Show Mask", value=True)
 
-def deeplab_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
-    return "deep"
+    show_image = og_img
+    if show_mask_checkbox:
+        show_image = st.session_state.batched_mask
+    else:
+        show_image = og_img
+    fig = px.imshow(show_image,height=800,aspect='equal',)
+    processed_image.plotly_chart(fig,use_container_width=True)
 
 def mmyolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
-    return "mmyolo"
+    fig = px.imshow(st.session_state.batched_mask,height=800,aspect='equal',)
+    processed_image.plotly_chart(fig,use_container_width=True)
 
 def yolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
-    return "yolo"
+    fig = px.imshow(st.session_state.batched_mask,height=800,aspect='equal',)
+    processed_image.plotly_chart(fig,use_container_width=True)
 
 # TODO: Add multiple models for processing images. 
 # Bounding boxes should still be able to be extracted and added. Semantic segmentation methods like UNET and DEEPLAB and
@@ -193,6 +205,8 @@ def pipeline_show(processed_image, og_img,sidebar_option_subheader, side_tab_opt
             # -- Just show original image
             show_image = og_img
     processed_image.image(show_image, caption=st.session_state.uploaded_image.name)
+    fig = px.imshow(show_image,height=800,aspect='equal',)
+    st.plotly_chart(fig,use_container_width=True)
 
     main_col_1.download_button(label="Download", data=download_image(show_image), file_name=st.session_state.uploaded_image.name, mime="image/png")
 
@@ -233,6 +247,7 @@ def main():
             side_tab_settings.divider()
             side_tab_settings.warning("The pipeline will use the chosen object detector for the input bounding boxes which will then be used with the segment anything model (SAM) to produce the mask around the detected nuceli.")
             side_tab_settings.warning("The model was trained on the MoNuSeg dataset.")
+            side_tab_settings.warning("This will take a while to process and show.")
         st.session_state.model_option = overall_model
 
     # -- [ IMAGE UPLOAD TAB INFO ] -- #
@@ -254,6 +269,7 @@ def main():
         with NamedTemporaryFile(dir='.', suffix='.png') as f:
             f.write(uploaded_image.getbuffer())
             img = cv2.imread(f.name)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             if not st.session_state.is_uploaded:
                 st.session_state.is_uploaded = True
                 st.rerun()
@@ -262,7 +278,8 @@ def main():
             if 'image' not in st.session_state:
                 st.session_state.image = img
             # -- ------------------------------ -- #
-            processed_image.image(st.session_state.image, caption=uploaded_image.name)
+            fig = px.imshow(st.session_state.image, title=uploaded_image.name,height=800,)
+            processed_image.plotly_chart(fig)
 
             # -- Check if button has already been pressed -- #
             if "is_processed" not in st.session_state:
