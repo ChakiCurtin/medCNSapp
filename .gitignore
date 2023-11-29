@@ -1,2 +1,4 @@
 *.pth
 temp/
+models/
+__pycache__/
