@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import glob
 
+from utils import load_images
 # SOME LINKS FOR REFERENCE:
 # * https://plotly.com/python-api-reference/generated/plotly.express.pie
 # * https://plotly.com/python/builtin-colorscales/
@@ -33,18 +33,6 @@ BLADDER_URO = "Bladder Urothelial Carcinoma"
 COLON_ADENO = "Colon adenocarcinoma"
 STOMACH_ADENO = "Stomach adenocarcinoma"
 # -- ################################ -- #
-@st.cache_data
-def load_images():
-    image_files = glob.glob("images/MoNuSeg/*/*.png")
-    images_subset = []
-    for image_file in image_files:
-        image_file = image_file.replace("\\", "/")
-        image_subset = image_file.split("/")
-        if image_subset[2] not in images_subset:
-            images_subset.append(image_subset[2])
-
-    images_subset.sort()
-    return image_files, images_subset
 
 def dataset_selector(dataset_option: str):
     dataset_dict = {
@@ -129,6 +117,7 @@ def monuseg():
                        )
     cols[1].plotly_chart(pie_chart)
     cols[1].divider()
+    # -- [ Show tiles of images from MoNuSeg ] -- #
     image_files, images_subset = load_images()
     sets = cols[1].multiselect("Dataset Image Select set(s)", images_subset)
     view_images = []

@@ -6,3 +6,4 @@ seaborn==0.13.0
 torch==2.1.0
 plotly==5.18.0
 streamlit-image-comparison==0.0.4
+st-clickable-images

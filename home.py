@@ -1,3 +1,4 @@
+import base64
 from io import BufferedReader, BytesIO
 from mmengine import Config
 from mmseg.apis import init_model, inference_model
@@ -9,6 +10,8 @@ import registers
 from tempfile import NamedTemporaryFile
 import cv2
 import plotly.express as px
+# -0- testing new python package -- #
+from st_clickable_images import clickable_images
 
 # -- [ Page settings ] -- #
 st.set_page_config(page_title="Home | Image Segmenter", 
@@ -256,7 +259,47 @@ def main():
     if 'is_uploaded' not in st.session_state:
         st.session_state.is_uploaded = False
     uploaded_image = side_tab_image_upload.file_uploader("Upload H&E stained image (png)", type=["png"], disabled=st.session_state.is_uploaded)
+    side_tab_image_upload.divider()
+    side_tab_image_upload.header("Or, choose from our sample images:")
+    image_files, images_subset = utils.load_images()
+    sets = side_tab_image_upload.multiselect("Dataset Image Select set(s)", images_subset, key="dataset_multi")
+    view_images = []
+    for image_file in image_files:
+        if any(set in image_file for set in sets):
+            view_images.append(image_file)
+        else:
+            if "image" in st.session_state and uploaded_image is None:
+               print("[***] in set")
+               del st.session_state.image
+
+            
+    images = []
+    for img in view_images:
+        with open(img, "rb") as image:
+            encoded = base64.b64encode(image.read()).decode()
+            images.append(f"data:image/png;base64,{encoded}")
+    
+    n = 1
+    to_show = []
+    for i in range(0, int(len(images) / 2.5), n):
+        to_show.append(images[i:i+n])
+
+    with side_tab_image_upload:
+        clicked = clickable_images(to_show,
+                                titles=[],
+                                div_style={"display": "flex", "justify-content": "center", "flex-wrap": "wrap"},
+                                img_style={"margin": "5px", "height": "200px"},
+                                key="clickable_img"
+                                )
+        if clicked > -1 and "dataset_multi" in st.session_state:
+            if len(view_images) > 0:
+                img = cv2.imread(view_images[clicked])
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                st.session_state.image = (img,view_images[clicked])
+    side_tab_image_upload.warning("Uploaded image takes priority thus if selecting from sample, please remove uploaded file")
+
     # TODO - Add multi image input (list of images for processing)
+
 
     # -- [ OPTIONS TAB INFO ] -- #
     side_tab_options.markdown("<h1 style='text-align: center; font-size: 40px'>Options</h1>", unsafe_allow_html=True)
@@ -266,80 +309,98 @@ def main():
     if uploaded_image is not None:
         if 'uploaded_image' not in st.session_state:
             st.session_state.uploaded_image = uploaded_image
-        with NamedTemporaryFile(dir='.', suffix='.png') as f:
+        # TODO: find how to and delete all temporary files created by the following method. ( I think it was done for legal dmain)
+        with NamedTemporaryFile(dir='./temp', suffix='.png', delete=False) as f:
             f.write(uploaded_image.getbuffer())
             img = cv2.imread(f.name)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             if not st.session_state.is_uploaded:
                 st.session_state.is_uploaded = True
                 st.rerun()
-            processed_image = st.empty()
             # -- Define image for session state -- #
-            if 'image' not in st.session_state:
-                st.session_state.image = img
+            st.session_state.image = (img,f.name)
             # -- ------------------------------ -- #
-            fig = px.imshow(st.session_state.image, title=uploaded_image.name,height=800,)
-            processed_image.plotly_chart(fig)
 
-            # -- Check if button has already been pressed -- #
-            if "is_processed" not in st.session_state:
-                st.session_state.is_processed = False
-            # -- ---------------------------------------- -- #
-            cols = st.columns(3)
-            if 'process_button' not in st.session_state:
-                 st.session_state.process_button = False
-            if cols[0].button('Process Image', disabled=st.session_state.process_button):
-                    if "model_option" in st.session_state:
-                        if cols[1].button('Stop Processing', disabled=st.session_state.process_button):
-                            st.stop()
-                        with st.spinner(text='In progress'):
-                            bar = st.progress(0)
-                            models_selector(st.session_state.model_option)(f.name, img, bar)
-                            bar.progress(100)
-                            st.success('Done')
-                            st.session_state.is_processed = True
-                    else:
-                        st.warning("Please Choose a model in the 'Settings' tab on the left (sidebar)")
-                        st.stop()
-                    
-            if st.session_state.is_processed:
-                st.session_state.process_button = True
-                show_selector(st.session_state.model_option)(processed_image=processed_image,
-                                                             side_tab_options=side_tab_options,
-                                                             sidebar_option_subheader=sidebar_option_subheader,
-                                                             main_col_1=cols[1],
-                                                             og_img=img,
-                                                             )
-    else:
-        st.warning("Please use the sidebar <- to choose the model, upload the image for processing.")
-        print("[*] Clearing local variables stored in cache for the image")
-        if 'uploaded_image' in st.session_state:
-             del st.session_state.uploaded_image
-             print("[**] cleared uploaded_image")
-        if 'image' in st.session_state:
-            del st.session_state.image
-            print("[**] cleared image")
-        if "is_processed" in st.session_state:
-            del st.session_state.is_processed
-            print("[**] cleared is_processed")
-        if "process_button" in st.session_state:
-            del st.session_state.process_button
-            print("[**] cleared process_button")
-        if 'detections' in st.session_state:
-            del st.session_state.detections
-            print("[**] cleared detections")
-        if "batched_mask" in st.session_state:
-            del st.session_state.batched_mask
-            print("[**] cleared batched_mask")
-        if "mask_img" in st.session_state:
-            del st.session_state.mask_img
-            print("[**] cleared mask_img")
-        if "processed_mask" in st.session_state:
-            del st.session_state.processed_mask
-        if st.session_state.is_uploaded:
-            del st.session_state.is_uploaded
-            print("[**] cleared is_uploaded")
+    if "image" in st.session_state:
+        print("[********] in image")
+        processed_image = st.empty()
+        given_image, img_name = st.session_state.image
+        fig = px.imshow(given_image,height=800,)
+        processed_image.plotly_chart(fig)
+
+        
+        cols = st.columns(3)
+        
+        if cols[2].button('Clear Image', disabled=(uploaded_image is not None)):
+            app_rerunner()
             st.rerun()
+        # -- Check if button has already been pressed -- #
+        if "is_processed" not in st.session_state:
+            st.session_state.is_processed = False
+        # -- ---------------------------------------- -- #
+        if 'process_button' not in st.session_state:
+            st.session_state.process_button = False  
+        # -- ---------------------------------------- -- #
+        if cols[0].button('Process Image', disabled=st.session_state.process_button):
+                if "model_option" in st.session_state:
+                    if cols[1].button('Stop Processing', disabled=st.session_state.process_button):
+                        st.stop()
+                    with st.spinner(text='In progress'):
+                        bar = st.progress(0)
+                        print(img_name)
+                        models_selector(st.session_state.model_option)(img_name, given_image, bar)
+                        bar.progress(100)
+                        st.success('Done')
+                        st.session_state.is_processed = True
+                else:
+                    st.warning("Please Choose a model in the 'Settings' tab on the left (sidebar)")
+                    st.stop()
+        
+
+        if st.session_state.is_processed:
+            st.session_state.process_button = True
+            show_selector(st.session_state.model_option)(processed_image=processed_image,
+                                                            side_tab_options=side_tab_options,
+                                                            sidebar_option_subheader=sidebar_option_subheader,
+                                                            main_col_1=cols[1],
+                                                            og_img=img,
+                                                            )
+    else:
+        app_rerunner()
+
+def app_rerunner():
+    st.warning("Please use the sidebar <- to choose the model, upload the image for processing.")
+    print("[*] Clearing local variables stored in cache for the image")
+    if 'uploaded_image' in st.session_state:
+            del st.session_state.uploaded_image
+            print("[**] cleared uploaded_image")
+    if 'image' in st.session_state:
+        del st.session_state.image
+        print("[**] cleared image")
+    if "is_processed" in st.session_state:
+        del st.session_state.is_processed
+        print("[**] cleared is_processed")
+    if "process_button" in st.session_state:
+        del st.session_state.process_button
+        print("[**] cleared process_button")
+    if "clickable_img" in st.session_state:
+        print("[**] deleting clickable image")
+        del st.session_state.clickable_img
+    if 'detections' in st.session_state:
+        del st.session_state.detections
+        print("[**] cleared detections")
+    if "batched_mask" in st.session_state:
+        del st.session_state.batched_mask
+        print("[**] cleared batched_mask")
+    if "mask_img" in st.session_state:
+        del st.session_state.mask_img
+        print("[**] cleared mask_img")
+    if "processed_mask" in st.session_state:
+        del st.session_state.processed_mask
+    if st.session_state.is_uploaded:
+        del st.session_state.is_uploaded
+        print("[**] cleared is_uploaded")
+        st.rerun()
 
 
 def download_image(img):

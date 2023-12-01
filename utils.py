@@ -13,6 +13,7 @@ import cv2
 from segment_anything import sam_model_registry, SamPredictor
 # -- [ STREAMLIT TOOLS ] -- #
 import streamlit as st
+import glob
 
 # -- ############################### -- #
 
@@ -165,3 +166,20 @@ def numpy_from_result(result: SegDataSample, squeeze: bool = True, as_uint: bool
         array = array.astype(np.uint8)
     return array
 
+# -- [ Adding more util functions from dataset_selector ] -- #
+@st.cache_data
+def load_images():
+    image_files = glob.glob("images/MoNuSeg/*/*.png")
+    images_subset = []
+    for image_file in image_files:
+        image_file = image_file.replace("\\", "/")
+        image_subset = image_file.split("/")
+        if image_subset[2] not in images_subset:
+            images_subset.append(image_subset[2])
+
+    images_subset.sort()
+    return image_files, images_subset
+
+def mask_searcher(img:str):
+    imagepre = img.split(sep="/")
+    return imagepre
