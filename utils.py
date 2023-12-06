@@ -1,4 +1,6 @@
 # -- [ MMDETECTION | MMYOLO  Dependencies ] -- #
+from pathlib import Path
+import pandas as pd
 import torch
 from mmdet.apis import init_detector, inference_detector
 from mmdet.registry import VISUALIZERS
@@ -14,7 +16,9 @@ from segment_anything import sam_model_registry, SamPredictor
 # -- [ STREAMLIT TOOLS ] -- #
 import streamlit as st
 import glob
-
+import os
+# -- [ For metrics (semantic seg demo) -- ]
+import utils_metrics as metrics
 # -- ############################### -- #
 
 # -- [ Show Mask Function ] -- #
@@ -180,6 +184,75 @@ def load_images():
     images_subset.sort()
     return image_files, images_subset
 
-def mask_searcher(img:str):
+"""
+NAME: binary_to_bgr
+DESCRIPTION: Function which takes in binary image (GT mask or prediction mask) and 
+creates a BGR image of it. This image can be seen and used for displaying.
+"""
+def binary_to_bgr(img: np.ndarray) -> np.ndarray:
+    _,pred_mask = cv2.threshold(img,0,255,cv2.THRESH_BINARY)
+    pred_mask_3d = np.zeros((np.array(pred_mask).shape[0], np.array(pred_mask).shape[1],3),dtype="uint8")   
+    pred_mask_3d[:,:,0] = pred_mask
+    pred_mask_3d[:,:,1] = pred_mask
+    pred_mask_3d[:,:,2] = pred_mask
+    return pred_mask_3d
+
+def name_processer(img:str):
     imagepre = img.split(sep="/")
-    return imagepre
+    name = imagepre[3]
+    return name
+
+
+def mask_searcher(name:str):
+    mask_file = f"images/MoNuSeg/masks/test/{name}"
+    file = None
+    if os.path.isfile(mask_file):
+        file = mask_file
+    else:
+        file = None
+    return file
+"""
+NAME: model_accuracy
+DESC: Function which gives the metrics for a particular image from prediction and GT
+"""
+@st.cache_data
+def model_accuracy(ground: Path, prediction: Path, class_idx=1) -> pd.DataFrame:
+    results = {}
+    results["name"] = ground.stem
+    # need to read in the data
+    gt = cv2.imread(str(ground),cv2.IMREAD_GRAYSCALE)
+    pred = cv2.imread(str(prediction),cv2.IMREAD_GRAYSCALE)
+
+    results["accuracy"] = str(metrics.accuracy(gt, pred))
+    results["precision"] = str(metrics.precision(gt, pred))
+    results["recall"] = str(metrics.recall(gt, pred))
+    results["f1"] = str(metrics.f1(metrics.precision(gt, pred), metrics.recall(gt, pred)))
+    results["iou"] = str(metrics.iou(gt, pred))
+    df = pd.DataFrame.from_dict(results, orient='index',)
+    return df
+
+"""
+NAME: gt_pred_overlay
+DESC: Function which gives a colourful image of how close prediction mask was to the ground truth
+"""
+@st.cache_data
+def gt_pred_overlay(ground: Path, prediction: Path):
+    gt = cv2.imread(str(ground), cv2.IMREAD_GRAYSCALE)
+    pred = cv2.imread(str(prediction), cv2.IMREAD_GRAYSCALE)
+    gt_mask_3d = binary_to_bgr(img=gt)
+    pred_mask_3d = binary_to_bgr(img=pred)
+    # -- [ adding colour to binary images ] -- #
+    green = [0, 255, 0]
+    blue =  [0, 0, 255]
+    yel =   [255, 255, 0]
+    red =   [255, 0, 0] 
+    white = [255, 255, 255]
+    # -- [ Colouring all white pixels to another colour] -- #
+    pred_mask_3d[np.where((pred_mask_3d==[255,255,255]).all(axis=2))] = red # Prediction mask
+    gt_mask_3d[np.where((gt_mask_3d==[255,255,255]).all(axis=2))] = blue    # Ground truth mask
+    # -- [ Converting all image masks made above to RGB ] -- #
+    pred_mask_3d = cv2.cvtColor(pred_mask_3d, cv2.COLOR_BGR2RGB)
+    gt_mask_3d = cv2.cvtColor(gt_mask_3d, cv2.COLOR_BGR2RGB)
+    # -- [ Perform the subtraction ] -- #
+    overlap = cv2.bitwise_xor(gt_mask_3d,pred_mask_3d)
+    return overlap

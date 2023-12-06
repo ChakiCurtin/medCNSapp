@@ -10,3 +10,4 @@
 - pip install "mmsegmentation>=1.0.0"
 - pip install ftfy
 - pip install regex
+- conda install Jinja2
