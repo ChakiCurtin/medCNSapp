@@ -48,6 +48,9 @@ def main():
   </style>
     """, unsafe_allow_html=True)
     cols = st.columns(5)
+    # TODO [medium]: Create stain norm technique
+    # Allow one image to selected as the fit, allow for uploaded image 
+    # and show comparison from original and stain norm using slider
     preproc_option = st.sidebar.radio(
         "Select Augmentation Technique",
         ["CLAHE", "Stain Normalisation"],

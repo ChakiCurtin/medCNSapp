@@ -56,6 +56,8 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 def register():
     registers.registerstuff()
 
+
+# TODO[very low]: Get more models to use for selection. RTMDet, fasterSAM etc
 def models_selector(chosen_model:str):
     models_dict = {
         "U-Net": unet_processor,
@@ -91,6 +93,7 @@ def unet_processor(path_img, image, bar):
     # -- add the mask to current session-- #
     st.session_state.batched_mask = pred
 
+# TODO[high]: Fix output mask for deeplab, cannot see the mask clearly even though if it is processed
 def deeplab_processor(path_img, image, bar):
     config = Path("./models/semantic/deeplab/deeplab_test/deeplab.py")
     pathfile = Path("./models/semantic/deeplab/deeplab_test/iter_20000.pth")
@@ -113,10 +116,13 @@ def process_images(path_img, model, classes, palette):
     # - - [ Saving raw image to session state to be used for different applications ] - - #
     st.session_state.pred_mask_raw = mask
     dest = mask_overlay(img, mask, classes, palette)
-    # TODO: Add conditional for sample images only to show metrics
-    # TODO: Add metrics and overlay and pred_mask_raw to get deleted on image reset
-    metrics = generate_metrics_per_img(path_img)
-    st.session_state.metrics = metrics
+    # TODO[low]: Add metrics and overlay and pred_mask_raw to get deleted on image reset
+    # For now use the fact that sample is only created if it is chosen as a sample image
+    # for checking.
+    if "sample" in st.session_state:
+        if st.session_state.sample:
+            metrics = generate_metrics_per_img(path_img)
+            st.session_state.metrics = metrics
     return dest
 
 def generate_metrics_per_img(img_path:str,):
@@ -148,6 +154,7 @@ def mask_overlay(img, mask, classes, palette):
         dest[binary_mask] = cv2.addWeighted(img, 1 - 0.5, colour_mask, 0.5, 0)[binary_mask]
     return dest 
 
+# TODO[high]: Create rest of model processing methods [mmyolo,yolo]
 def mmyolo_processor(path_img, image, bar):
     return "mmyolo"
 
@@ -169,7 +176,13 @@ def semantic_show(processed_image, og_img,sidebar_option_subheader, side_tab_opt
         st.session_state.overlay_check = False
     show_mask_checkbox = side_tab_options[2].checkbox("Show Mask", value=st.session_state.mask_check)
     show_image_checkbox = side_tab_options[2].checkbox("Show Image", value=st.session_state.image_check)
-    show_overlay_checkbox = side_tab_options[2].checkbox("Show Overlay", value= st.session_state.overlay_check)
+    if "sample" in st.session_state:
+        if st.session_state.sample:
+            show_overlay_checkbox = side_tab_options[2].checkbox("Show Overlay", value= st.session_state.overlay_check)
+        else:
+            show_overlay_checkbox = False
+    else:
+        show_overlay_checkbox = False
     
     # -- [ setting all checkboxes]
     if show_mask_checkbox and not show_image_checkbox and not show_overlay_checkbox:
@@ -208,33 +221,35 @@ def semantic_show(processed_image, og_img,sidebar_option_subheader, side_tab_opt
             processed_image.plotly_chart(fig,use_container_width=True)
         
     side_tab_options[2].divider()
-    # -- [ Get accuracy of the prediction result if ] -- #
-    if "metrics" in st.session_state:
-        df:pd.DataFrame = st.session_state.metrics
-        df.style.set_caption("Hello")
-        df.columns = ["metric"]
-        df = df.drop("name")
-        cell_hover = {  # for row hover use <tr> instead of <td>
-            'selector': 'td:hover',
-            'props': [('background-color', '#ffffb3')]
-        }
-        index_names = {
-            'selector': '.index_name',
-            'props': 'font-style: italic; color: darkgrey; font-weight:normal;'
-        }       
-        headers = {
-            'selector': 'th:not(.index_name)',
-            'props': 'background-color: #000066; color: white;'
-        }
-        df.style.set_table_styles([cell_hover, index_names, headers])
-        new_tab = "\u2001Metrics\u2001\u2001"
-        if new_tab not in st.session_state.menu_tabs:
-            st.session_state.menu_tabs.append(new_tab)
-            st.rerun()
-            
-        side_tab_options[3].dataframe(data=df,use_container_width=True)
+    # -- [ Get accuracy of the prediction result if sample image is chosen ] -- #
+    if "sample" in st.session_state:
+        if st.session_state.sample:
+            if "metrics" in st.session_state:
+                # TODO[high]: Fix and Style metrics shown for sample images
+                df:pd.DataFrame = st.session_state.metrics
+                df.style.set_caption("Hello")
+                df.columns = ["metric"]
+                df = df.drop("name")
+                cell_hover = {  # for row hover use <tr> instead of <td>
+                    'selector': 'td:hover',
+                    'props': [('background-color', '#ffffb3')]
+                }
+                index_names = {
+                    'selector': '.index_name',
+                    'props': 'font-style: italic; color: darkgrey; font-weight:normal;'
+                }       
+                headers = {
+                    'selector': 'th:not(.index_name)',
+                    'props': 'background-color: #000066; color: white;'
+                }
+                df.style.set_table_styles([cell_hover, index_names, headers])
+                new_tab = "\u2001Metrics\u2001\u2001"
+                if new_tab not in st.session_state.menu_tabs:
+                    st.session_state.menu_tabs.append(new_tab)
+                    st.rerun()
+                    
+                side_tab_options[3].dataframe(data=df,use_container_width=True)
         
-
 def mmyolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
     fig = px.imshow(st.session_state.batched_mask,height=800,aspect='equal',)
     processed_image.plotly_chart(fig,use_container_width=True)
@@ -243,10 +258,8 @@ def yolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options
     fig = px.imshow(st.session_state.batched_mask,height=800,aspect='equal',)
     processed_image.plotly_chart(fig,use_container_width=True)
 
-# TODO: Add multiple models for processing images. 
-# Bounding boxes should still be able to be extracted and added. Semantic segmentation methods like UNET and DEEPLAB and
-# Current pipeline methods for mmyolo, rtmdet with SAM should be added
 def process_image_pipeline(path_img, image, bar):
+    #TODO[low]: Add more options for pipeline (modular for instance and SAM)
     config = Path("./models/objdetection/mmyolo/mmyolov8/mmyolov8_config.py")
     pathfile = Path("./models/objdetection/mmyolo/mmyolov8/epoch_800.pth")
     model = utils.mmyolo_init(config=config,pathfile=pathfile)
@@ -316,6 +329,7 @@ def main():
     
     # -- [ SETTINGS TAB INFO ] -- #
     side_tabs[0].title("Choose Model:")
+    # TODO[very low]: Add option for custom model (and path file) upload and assess that way (FUTURE THINKING)(MMDETECTION MMSEGMENTATION)
     model_option = side_tabs[0].selectbox(label="Choose Model Range",
                                 options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation',),
                                 index=None,
@@ -349,17 +363,17 @@ def main():
 
     # -- [ IMAGE UPLOAD TAB INFO ] -- #
     side_tabs[1].header("Upload nuclei image:")
+    if "sample" not in st.session_state:
+        st.session_state.sample = False
     # -- [ Disable uploader once upload has been done] -- #
     if 'is_uploaded' not in st.session_state:
         st.session_state.is_uploaded = False
     uploaded_image = side_tabs[1].file_uploader("Upload H&E stained image (png)", type=["png"], disabled=st.session_state.is_uploaded)
     side_tabs[1].divider()
+    # -- [ Be able to choose between different datasets which already have images with GT for metrics ] -- #
     side_tabs[1].header("Or, choose from our sample images:")
-    image_files, images_subset = utils.load_images()
-    # TODO - Create new function which only takes test images 
-    #        from directories of dataset selected. No longer "test" or "train". 
-    #        Will become "MoNuSeg", "CryoNuSeg"
-
+    side_tabs[1].warning("Sample images will also give metrics for how well the model did on that image")
+    image_files, images_subset = utils.load_images_test_datasets()
     sets = side_tabs[1].multiselect("Dataset Selector", images_subset, key="dataset_multi")
     view_images = []
     for image_file in image_files:
@@ -377,8 +391,6 @@ def main():
     to_show = []
     for i in range(0, int(len(images) / 2.5), n):
         to_show.append(images[i:i+n])
-
-    # TODO: Fix multiselector to show datasets rather than sets in dataset. "MoNuSeg" rather than "test"
     with side_tabs[1]:
         clicked = clickable_images(to_show,
                                 titles=[],
@@ -392,9 +404,10 @@ def main():
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 st.session_state.image = (img,view_images[clicked])
                 st.write(utils.name_processer(str(view_images[clicked])))
+                st.session_state.sample = True
     side_tabs[1].warning("Uploaded image takes priority thus if selecting from sample, please remove uploaded file")
 
-    # TODO - Add multi image input (list of images for processing)
+    # TODO[medium] - Add multi image input (list of images for processing)
     # -- [ OPTIONS TAB INFO ] -- #
     side_tabs[2].markdown("<h1 style='text-align: center; font-size: 40px'>Options</h1>", unsafe_allow_html=True)
     subheader_text = "Please Process Image for Options"
@@ -412,6 +425,8 @@ def main():
             st.rerun()
         # -- Define image for session state -- #
         st.session_state.image = (img,f.name)
+        if "sample" in st.session_state:
+            st.session_state.sample = False
         # -- ------------------------------ -- #
 
     if "image" in st.session_state:
@@ -458,6 +473,7 @@ def main():
         app_rerunner()
 
 def app_rerunner():
+    # TODO[low]: Recreate rerunner function to chose what not to delete rather than what to delete and this is not very scalable
     st.warning("Please use the sidebar <- to choose the model, upload the image for processing.")
     print("[*] Clearing local variables stored in cache for the image")
     if 'uploaded_image' in st.session_state:

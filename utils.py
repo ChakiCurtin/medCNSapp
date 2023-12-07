@@ -184,6 +184,19 @@ def load_images():
     images_subset.sort()
     return image_files, images_subset
 
+@st.cache_data
+def load_images_test_datasets():
+    image_files = glob.glob("images/*/test/*.png")
+    images_subset = []
+    for image_file in image_files:
+        image_file = image_file.replace("\\", "/")
+        image_subset = image_file.split("/")
+        # will select dataset name from list of images
+        if image_subset[1] not in images_subset:
+            images_subset.append(image_subset[1])
+    images_subset.sort()
+    return image_files, images_subset
+
 """
 NAME: binary_to_bgr
 DESCRIPTION: Function which takes in binary image (GT mask or prediction mask) and 
@@ -201,7 +214,6 @@ def name_processer(img:str):
     imagepre = img.split(sep="/")
     name = imagepre[3]
     return name
-
 
 def mask_searcher(name:str):
     mask_file = f"images/MoNuSeg/masks/test/{name}"

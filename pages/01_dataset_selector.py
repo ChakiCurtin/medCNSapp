@@ -135,6 +135,7 @@ def monuseg():
         for i, image_file in enumerate(group):
             colss[i].image(image_file)
 
+#TODO[medium]: Finish the rest of the datasets. Find and add information for each
 def cryonuseg():
     st.write("CryoNuSeg WIP")
 
