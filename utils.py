@@ -223,6 +223,7 @@ def mask_searcher(name:str):
     else:
         file = None
     return file
+
 """
 NAME: model_accuracy
 DESC: Function which gives the metrics for a particular image from prediction and GT

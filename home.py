@@ -79,6 +79,7 @@ def show_selector(chosen_model:str):
     return models_dict.get(chosen_model)
      
 def unet_processor(path_img, image, bar):
+    st.session_state.model_chosen = "U-Net"
     config = Path("./models/semantic/unet/unet_test/unet.py")
     pathfile = Path("./models/semantic/unet/unet_test/iter_20000.pth")
     cfg = Config.fromfile(config)
@@ -86,15 +87,15 @@ def unet_processor(path_img, image, bar):
     model = init_model(cfg, str(pathfile), 'cuda:0')
     bar.progress(30)
     classes = model.dataset_meta['classes']
-    palette = model.dataset_meta['palette']
+    palette = [[0,0,0],[0,255,0]]
     bar.progress(40)
     pred = process_images(path_img, model, classes, palette)
     bar.progress(100)
     # -- add the mask to current session-- #
     st.session_state.batched_mask = pred
 
-# TODO[high]: Fix output mask for deeplab, cannot see the mask clearly even though if it is processed
 def deeplab_processor(path_img, image, bar):
+    st.session_state.model_chosen = "Deeplabv3+"
     config = Path("./models/semantic/deeplab/deeplab_test/deeplab.py")
     pathfile = Path("./models/semantic/deeplab/deeplab_test/iter_20000.pth")
     cfg = Config.fromfile(config)
@@ -102,7 +103,7 @@ def deeplab_processor(path_img, image, bar):
     model = init_model(cfg, str(pathfile), 'cuda:0')
     bar.progress(30)
     classes = model.dataset_meta['classes']
-    palette = "255,77,255"
+    palette = [[0,0,0],[0,255,0]]
     bar.progress(40)
     pred = process_images(path_img, model, classes, palette)
     bar.progress(100)
@@ -156,9 +157,11 @@ def mask_overlay(img, mask, classes, palette):
 
 # TODO[high]: Create rest of model processing methods [mmyolo,yolo]
 def mmyolo_processor(path_img, image, bar):
+    st.session_state.model_chosen = "MMYolov8"
     return "mmyolo"
 
 def yolo_processor(path_img, image, bar):
+    st.session_state.model_chosen = "Yolov8"
     return "yolo"
 
 def make_pretty(styler):
@@ -225,31 +228,57 @@ def semantic_show(processed_image, og_img,sidebar_option_subheader, side_tab_opt
     if "sample" in st.session_state:
         if st.session_state.sample:
             if "metrics" in st.session_state:
-                # TODO[high]: Fix and Style metrics shown for sample images
                 df:pd.DataFrame = st.session_state.metrics
-                df.style.set_caption("Hello")
-                df.columns = ["metric"]
-                df = df.drop("name")
-                cell_hover = {  # for row hover use <tr> instead of <td>
-                    'selector': 'td:hover',
-                    'props': [('background-color', '#ffffb3')]
-                }
-                index_names = {
-                    'selector': '.index_name',
-                    'props': 'font-style: italic; color: darkgrey; font-weight:normal;'
-                }       
-                headers = {
-                    'selector': 'th:not(.index_name)',
-                    'props': 'background-color: #000066; color: white;'
-                }
-                df.style.set_table_styles([cell_hover, index_names, headers])
                 new_tab = "\u2001Metrics\u2001\u2001"
                 if new_tab not in st.session_state.menu_tabs:
                     st.session_state.menu_tabs.append(new_tab)
                     st.rerun()
-                    
-                side_tab_options[3].dataframe(data=df,use_container_width=True)
+                metrics_viewer(data=df,output=side_tab_options[3])
+
+
+
+def metrics_viewer(data:pd.DataFrame, output):
+    """
+    NAME: metrics_viewer
+    DESC: 
+        - Takes in the metrics created when processing images
+        - Processes them to make them easier to view
+        - stylify the metrics to suite this app
+    """
+    df = {}
+    df["Model"] = st.session_state.model_chosen
+    df["Name"] = data[0][0]
+    df["Accuracy"] = data[0][1]
+    df["Precision"] = data[0][2]
+    df["Recall"] = data[0][3]
+    df["F1"] = data[0][4]
+    df["IoU"] = data[0][5]
+    metrics_data = pd.DataFrame.from_dict(data=df.items(),orient="columns")
+    metrics_data.columns = [""," "]
+    background_1 = ["#81b69d","#06768d"]
+    background_2 = ["#92ddc8","#046276"]
+    text_col = ["black","#ffffff","#f9f1f1"]
+    # -- [ Create the data table ] -- #
+    metrics_styled = metrics_data.style.applymap(
+        lambda _: f"background-color: {background_1[1]}; color: {text_col[1]};", 
+        subset=([0,2,4,6], slice(None))).applymap(
+        lambda _: f"background-color: {background_2[1]}; color: {text_col[2]};", 
+        subset=([1,3,5], slice(None))
+        ).set_properties(
+        **{'font-weight':'bold',}).hide(axis = 0).hide(axis = 1)
+    with output:
+        # -- [ Showcase Data ] -- #
+        st.dataframe(metrics_styled, 
+            hide_index=True,
+            use_container_width=True)
         
+        # -- [ Can use HTML table ] -- #
+        #st.markdown(metrics_styled.to_html(), unsafe_allow_html = True)
+        with st.expander("Metrics Explanation"):
+            st.header("Explanation on the metrics shown above")
+            # TODO[low]: Finish this by adding explanations on all the metrics used
+
+
 def mmyolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
     fig = px.imshow(st.session_state.batched_mask,height=800,aspect='equal',)
     processed_image.plotly_chart(fig,use_container_width=True)
