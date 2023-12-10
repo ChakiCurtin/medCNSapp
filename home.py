@@ -1,14 +1,18 @@
 import base64
 from io import BufferedReader, BytesIO
 import io
+# -- [ For OpenMMLab (U-Net, DeepLabv3+, mmyolov8,  )(MMDETECTION, MMSEGMENTATION, MMYOLO) ] -- #
 from mmengine import Config
 from mmseg.apis import init_model, inference_model
+import registers
+# -- [ For yolov8 ] -- #
+# from ultralytics import YOLO
+# -- [ The rest of the imports ] -- #
 from pathlib import Path
 import pandas as pd
 import streamlit as st
 import numpy as np
 import utils 
-import registers
 from tempfile import NamedTemporaryFile
 import cv2
 import plotly.express as px
@@ -63,7 +67,7 @@ def models_selector(chosen_model:str):
         "U-Net": unet_processor,
         "Deeplabv3+": deeplab_processor,
         "MMYOLOv8": mmyolo_processor,
-        "Yolov8": yolo_processor,
+        #"Yolov8": yolo_processor,
         "MMYOLO -> SAM": process_image_pipeline,
      }
     return models_dict.get(chosen_model)
@@ -72,8 +76,8 @@ def show_selector(chosen_model:str):
     models_dict = {
         "U-Net": semantic_show,
         "Deeplabv3+": semantic_show,
-        "MMYOLOv8": mmyolo_show,
-        "Yolov8": yolo_show,
+        "MMYOLOv8": instance_seg_show,
+        "Yolov8": instance_seg_show,
         "MMYOLO -> SAM": pipeline_show,
      }
     return models_dict.get(chosen_model)
@@ -151,25 +155,69 @@ def mask_overlay(img, mask, classes, palette):
         binary_mask = (mask == label)
         colour_mask = np.zeros_like(img)
         # -- Skipping outline for now
+        # TODO[medium/low]: Make transparency either a slider or modifiable.
         colour_mask[...] = palette[label]
         dest[binary_mask] = cv2.addWeighted(img, 1 - 0.5, colour_mask, 0.5, 0)[binary_mask]
     return dest 
 
-# TODO[high]: Create rest of model processing methods [mmyolo,yolo]
+# TODO[low]: Create Yolo processor for ultralytics
+# def yolo_processor(path_img, image, bar):
+#     st.session_state.model_chosen = "Yolov8"
+#     pathfile = "models/yolo/150_epoch_batch_2/yolo_ultra_150_epochs/train3/weights/best.pt"
+#     model=YOLO(pathfile)
+#     return "yolo"
+
+
 def mmyolo_processor(path_img, image, bar):
     st.session_state.model_chosen = "MMYolov8"
-    return "mmyolo"
+    config = Path("./models/objdetection/mmyolo/mmyolov8/mmyolov8_config.py")
+    pathfile = Path("./models/objdetection/mmyolo/mmyolov8/epoch_800.pth")
+    model = utils.mmyolo_init(config=config,pathfile=pathfile)
+    # -- Inference detection -- #
+    detections = utils.inference_detections(model=model, image=path_img)
+    orig_bound_img = utils.show_box_cv(detections, image.copy())
+    st.session_state.bounded_img = orig_bound_img
 
-def yolo_processor(path_img, image, bar):
-    st.session_state.model_chosen = "Yolov8"
-    return "yolo"
+def instance_seg_show(processed_image, og_img, sidebar_option_subheader, side_tab_options, main_col_1):
+    # TODO[low/medium]: Show GT bounding box regions for sample images as an overlay option
+    # TODO[low]: Be able to change colour of bounding box regions based on user preference
+    sidebar_option_subheader.subheader("Please choose one of the following options:")
+    if "bound_check" not in st.session_state:
+        st.session_state.bound_check = True
+    if "image_check" not in st.session_state:
+        st.session_state.image_check = True
+    #if "overlay_check" not in st.session_state:
+    #    st.session_state.overlay_check = False
+    show_bound_checkbox = side_tab_options[2].checkbox("Show detections", value=st.session_state.bound_check)
+    show_image_checkbox = side_tab_options[2].checkbox("Show Image", value=st.session_state.image_check)
+    # if "sample" in st.session_state:
+    #     if st.session_state.sample:
+    #         show_overlay_checkbox = side_tab_options[2].checkbox("Show Overlay", value= st.session_state.overlay_check)
+    #     else:
+    #         show_overlay_checkbox = False
+    # else:
+    #     show_overlay_checkbox = False
+    
+    # -- [ setting all checkboxes]
 
-def make_pretty(styler):
-    styler.set_caption("Image Metrics")
-    styler.background_gradient(axis=None, vmin=1, vmax=5, cmap="YlGnBu")
-    return styler
+    if show_bound_checkbox and show_image_checkbox:
+        # show both
+        show_image = st.session_state.bounded_img
+    elif not show_bound_checkbox and show_image_checkbox:
+        # just show original image
+        show_image = og_img
 
-def semantic_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+    if not show_bound_checkbox and not show_image_checkbox:
+        processed_image.empty()
+    elif show_bound_checkbox and not show_image_checkbox:
+        processed_image.empty()
+        st.warning("Cannot should bounding box region without image. Please choose both.")
+    else:
+        fig = px.imshow(show_image,height=800,aspect='equal')
+        processed_image.plotly_chart(fig,use_container_width=True)
+    
+
+def semantic_show(processed_image, og_img, sidebar_option_subheader, side_tab_options, main_col_1):
     sidebar_option_subheader.subheader("Please choose one of the following options:")
     if "mask_check" not in st.session_state:
         st.session_state.mask_check = True
@@ -235,8 +283,6 @@ def semantic_show(processed_image, og_img,sidebar_option_subheader, side_tab_opt
                     st.rerun()
                 metrics_viewer(data=df,output=side_tab_options[3])
 
-
-
 def metrics_viewer(data:pd.DataFrame, output):
     """
     NAME: metrics_viewer
@@ -278,7 +324,6 @@ def metrics_viewer(data:pd.DataFrame, output):
             st.header("Explanation on the metrics shown above")
             # TODO[low]: Finish this by adding explanations on all the metrics used
 
-
 def mmyolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
     fig = px.imshow(st.session_state.batched_mask,height=800,aspect='equal',)
     processed_image.plotly_chart(fig,use_container_width=True)
@@ -286,6 +331,8 @@ def mmyolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_optio
 def yolo_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
     fig = px.imshow(st.session_state.batched_mask,height=800,aspect='equal',)
     processed_image.plotly_chart(fig,use_container_width=True)
+
+
 
 def process_image_pipeline(path_img, image, bar):
     #TODO[low]: Add more options for pipeline (modular for instance and SAM)
@@ -375,8 +422,12 @@ def main():
             side_tabs[0].warning("The model was trained on the MoNuSeg dataset.")
         elif model_option == "Object Detection":
             overall_model = side_tabs[0].radio(label=" ",
-                                                      options=["MMYOLOv8","Yolov8",],
-                                                      captions=["OpenMMLab implementation of Yolov8","The original Yolov8"])
+                                                      options=["MMYOLOv8",
+                                                               #"Yolov8",
+                                                               ],
+                                                      captions=["OpenMMLab implementation of Yolov8",
+                                                                #"The original Yolov8"
+                                                                ])
             side_tabs[0].divider()
             side_tabs[0].warning("Object detection models do not show mask, only a bounding box around the seperate detected nuceli.")
             side_tabs[0].warning("The model was trained on the MoNuSeg dataset.")
