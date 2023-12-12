@@ -51,4 +51,8 @@ WORKDIR /mmyolo_sam_st
 ENV FORCE_CUDA="1"
 RUN pip install -r requirements.txt
 #RUN ./runner.sh
-RUN streamlit run home.py
+#RUN streamlit run home.py
+WORKDIR /mmyolo_sam_st
+# DOCKER RUN CMD
+CMD ["streamlit","run", "home.py"]
+EXPOSE 8501
