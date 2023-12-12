@@ -35,6 +35,9 @@ RUN ["/bin/bash", "-c", "pip install ftfy"]
 RUN ["/bin/bash", "-c", "pip install regex"]
 RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/segment-anything.git"]
 RUN ["/bin/bash", "-c", "pip install pandas"]
+RUN ["/bin/bash", "-c", "pip install numpy"]
+RUN ["/bin/bash", "-c", "pip install matplotlib"]
+RUN ["/bin/bash", "-c", "pip install seaborn"]
 # Install MMSegmentation
 # RUN git clone -b main https://github.com/open-mmlab/mmsegmentation.git /mmsegmentation
 # WORKDIR /mmsegmentation
@@ -43,7 +46,7 @@ RUN ["/bin/bash", "-c", "pip install pandas"]
 # RUN pip install --no-cache-dir -e .
 
 #Install application
-RUN git clone -b main https://github.com/ChakiCurtin/mmyolo_sam_app.git /mmyolo_sam_st
+RUN git clone -b docker_test https://github.com/ChakiCurtin/mmyolo_sam_app.git /mmyolo_sam_st
 WORKDIR /mmyolo_sam_st
 ENV FORCE_CUDA="1"
 RUN pip install -r requirements.txt
