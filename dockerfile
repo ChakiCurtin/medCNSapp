@@ -43,7 +43,7 @@ RUN ["/bin/bash", "-c", "pip install st-clickable-images==0.0.3"]
 RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/segment-anything.git"]
 
 #Install application
-RUN git clone -b docker_test https://github.com/ChakiCurtin/mmyolo_sam_app.git /mmyolo_sam_st
+RUN git clone -b main https://github.com/ChakiCurtin/mmyolo_sam_app.git /mmyolo_sam_st
 WORKDIR /mmyolo_sam_st
 ENV FORCE_CUDA="1"
 #RUN pip install -r requirements.txt # No need to install requirements when installing container-wide
