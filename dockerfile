@@ -50,4 +50,5 @@ RUN git clone -b docker_test https://github.com/ChakiCurtin/mmyolo_sam_app.git /
 WORKDIR /mmyolo_sam_st
 ENV FORCE_CUDA="1"
 RUN pip install -r requirements.txt
-RUN ./runner.sh
+#RUN ./runner.sh
+RUN streamlit run home.py
