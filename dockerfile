@@ -27,31 +27,26 @@ ARG MMCV
 RUN ["/bin/bash", "-c", "pip install openmim"]
 RUN ["/bin/bash", "-c", "mim install mmengine>=0.7.1"]
 RUN ["/bin/bash", "-c", "mim install mmcv>=2.0.0rc4"]
-#RUN ["/bin/bash", "-c", "mim install mmcv==${MMCV}"]
 RUN ["/bin/bash", "-c", "pip install mmsegmentation>=1.0.0"]
 RUN ["/bin/bash", "-c", "mim install mmdet"]
 RUN ["/bin/bash", "-c", "mim install mmyolo"]
 RUN ["/bin/bash", "-c", "pip install ftfy"]
 RUN ["/bin/bash", "-c", "pip install regex"]
-RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/segment-anything.git"]
 RUN ["/bin/bash", "-c", "pip install pandas"]
 RUN ["/bin/bash", "-c", "pip install numpy"]
-RUN ["/bin/bash", "-c", "pip install matplotlib"]
-RUN ["/bin/bash", "-c", "pip install seaborn"]
-# Install MMSegmentation
-# RUN git clone -b main https://github.com/open-mmlab/mmsegmentation.git /mmsegmentation
-# WORKDIR /mmsegmentation
-# ENV FORCE_CUDA="1"
-# RUN pip install -r requirements.txt
-# RUN pip install --no-cache-dir -e .
+RUN ["/bin/bash", "-c", "pip install matplotlib==3.8.0"]
+RUN ["/bin/bash", "-c", "pip install seaborn==0.13.0"]
+RUN ["/bin/bash", "-c", "pip install streamlit==1.28.0"]
+RUN ["/bin/bash", "-c", "pip install plotly==5.18.0"]
+RUN ["/bin/bash", "-c", "pip install streamlit-image-comparison==0.0.4"]
+RUN ["/bin/bash", "-c", "pip install st-clickable-images==0.0.3"]
+RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/segment-anything.git"]
 
 #Install application
 RUN git clone -b docker_test https://github.com/ChakiCurtin/mmyolo_sam_app.git /mmyolo_sam_st
 WORKDIR /mmyolo_sam_st
 ENV FORCE_CUDA="1"
-RUN pip install -r requirements.txt
-#RUN ./runner.sh
-#RUN streamlit run home.py
+#RUN pip install -r requirements.txt # No need to install requirements when installing container-wide
 WORKDIR /mmyolo_sam_st
 # DOCKER RUN CMD
 CMD ["streamlit","run", "home.py"]
