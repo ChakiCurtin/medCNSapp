@@ -1,9 +1,8 @@
 streamlit==1.28.0
-pandas==2.1.2
 numpy==1.26.1
 matplotlib==3.8.0
 seaborn==0.13.0
 torch==2.1.0
 plotly==5.18.0
 streamlit-image-comparison==0.0.4
-st-clickable-images
+st-clickable-images==0.0.3

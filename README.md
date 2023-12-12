@@ -11,3 +11,4 @@
 - pip install ftfy
 - pip install regex
 - conda install Jinja2
+- pip install pandas
