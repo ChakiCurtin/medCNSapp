@@ -22,12 +22,13 @@ import utils_metrics as metrics
 # -- ############################### -- #
 
 # -- [ Show Mask Function ] -- #
-'''
-INPUT: Mask: ? , ax: plt.gca() , random_colour: bool 
-OUTPUT: Null 
-DEF: Function takes the mask produced by SAM, reshapes it and adds colours and then adds to plot
-'''
+
 def show_mask(mask, ax, random_color=False):
+    '''
+    INPUT: Mask: ? , ax: plt.gca() , random_colour: bool 
+    OUTPUT: Null 
+    DEF: Function takes the mask produced by SAM, reshapes it and adds colours and then adds to plot
+    '''
     if random_color:
         color = np.concatenate([np.random.Generator.random(3), np.array([0.6])], axis=0)
     else:
@@ -39,12 +40,12 @@ def show_mask(mask, ax, random_color=False):
     gc.collect()
 
 # -- [ Show Box Function ] -- #
-'''
-INPUT: box: ?, ax: plt.gca()
-OUTPUT: Null
-DEF: Function takes bounding box produced and add it to plot
-'''
 def show_box_plt(box, ax):
+    """
+    INPUT: box: ?, ax: plt.gca()
+    OUTPUT: Null
+    DEF: Function takes bounding box produced and add it to plot
+    """
     x0, y0 = box[0], box[1]
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=1))    
@@ -197,12 +198,15 @@ def load_images_test_datasets():
     images_subset.sort()
     return image_files, images_subset
 
-"""
-NAME: binary_to_bgr
-DESCRIPTION: Function which takes in binary image (GT mask or prediction mask) and 
-creates a BGR image of it. This image can be seen and used for displaying.
-"""
+
 def binary_to_bgr(img: np.ndarray) -> np.ndarray:
+    """binary_to_bgr
+    DESCRIPTION: Function which takes in binary image (GT mask or prediction mask) and 
+    creates a BGR image of it. This image can be seen and used for displaying.
+    ARGS:
+    -------
+    img (np.ndarray): binary image to convert to BGR
+    """
     _,pred_mask = cv2.threshold(img,0,255,cv2.THRESH_BINARY)
     pred_mask_3d = np.zeros((np.array(pred_mask).shape[0], np.array(pred_mask).shape[1],3),dtype="uint8")   
     pred_mask_3d[:,:,0] = pred_mask
@@ -224,12 +228,13 @@ def mask_searcher(name:str):
         file = None
     return file
 
-"""
-NAME: model_accuracy
-DESC: Function which gives the metrics for a particular image from prediction and GT
-"""
+
 @st.cache_data
 def model_accuracy(ground: Path, prediction: Path, class_idx=1) -> pd.DataFrame:
+    """
+    NAME: model_accuracy
+    DESC: Function which gives the metrics for a particular image from prediction and GT
+    """
     results = {}
     results["name"] = ground.stem
     # need to read in the data
@@ -244,12 +249,13 @@ def model_accuracy(ground: Path, prediction: Path, class_idx=1) -> pd.DataFrame:
     df = pd.DataFrame.from_dict(results, orient='index',)
     return df
 
-"""
-NAME: gt_pred_overlay
-DESC: Function which gives a colourful image of how close prediction mask was to the ground truth
-"""
+
 @st.cache_data
 def gt_pred_overlay(ground: Path, prediction: Path):
+    """
+    NAME: gt_pred_overlay
+    DESC: Function which gives a colourful image of how close prediction mask was to the ground truth
+    """
     gt = cv2.imread(str(ground), cv2.IMREAD_GRAYSCALE)
     pred = cv2.imread(str(prediction), cv2.IMREAD_GRAYSCALE)
     gt_mask_3d = binary_to_bgr(img=gt)
@@ -269,3 +275,19 @@ def gt_pred_overlay(ground: Path, prediction: Path):
     # -- [ Perform the subtraction ] -- #
     overlap = cv2.bitwise_xor(gt_mask_3d,pred_mask_3d)
     return overlap
+
+def models_url(model:str):
+    urls = {
+        "deeplab":"",
+        "unet":"",
+        "mmyolo":"",
+        "yolo":"",
+    }
+    return urls.get(model)
+
+def download_path(model:str):
+    # TODO[medium/high]: Finish this url getter using requests lib
+    import requests
+    url = models_url(model=model)
+
+    return "blyat"
