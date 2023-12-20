@@ -41,6 +41,7 @@ RUN ["/bin/bash", "-c", "pip install plotly==5.18.0"]
 RUN ["/bin/bash", "-c", "pip install streamlit-image-comparison==0.0.4"]
 RUN ["/bin/bash", "-c", "pip install st-clickable-images==0.0.3"]
 RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/segment-anything.git"]
+RUN ["/bin/bash", "-c", "pip install gdown"]
 
 #Install application
 RUN git clone -b main https://github.com/ChakiCurtin/mmyolo_sam_app.git /mmyolo_sam_st

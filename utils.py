@@ -19,6 +19,8 @@ import glob
 import os
 # -- [ For metrics (semantic seg demo) -- ]
 import utils_metrics as metrics
+# -- [ FOR DOWNLOADING GDRIVE WEIGHTS ] -- #
+import gdown
 # -- ############################### -- #
 
 # -- [ Show Mask Function ] -- #
@@ -276,18 +278,31 @@ def gt_pred_overlay(ground: Path, prediction: Path):
     overlap = cv2.bitwise_xor(gt_mask_3d,pred_mask_3d)
     return overlap
 
+# -- [ GOOGLE DRIVE LINKS FOR MY WEIGHTS ] -- #
 def models_url(model:str):
+    '''
+    NAME: models_url
+    DESC: takes in type of model (deeplab, unet) and ouputs part of gdrive link
+    '''
     urls = {
-        "deeplab":"",
-        "unet":"",
-        "mmyolo":"",
-        "yolo":"",
+        "deeplab":"https://drive.google.com/file/d/1Mo7_mY2S5_ojv9IQAO8eVTrwZfmJnYg9/view?usp=sharing",
+        "unet":"https://drive.google.com/file/d/1Y26DUPsp-SmLx5VQ17qQUIn_qqvYJtGS/view?usp=sharing",
+        "mmyolo":"https://drive.google.com/file/d/10dbZCqCNWOvAEFMYLvq1lajeJKCysSol/view?usp=sharing",
+        #"yolo":"",
     }
     return urls.get(model)
 
-def download_path(model:str):
-    # TODO[medium/high]: Finish this url getter using requests lib
-    import requests
-    url = models_url(model=model)
+def model_dest(model:str):
+    dirfull = {
+        "deeplab":"models/semantic/deeplab/deeplab_test/iter_20000.pth",
+        "unet":"models/semantic/unet/unet_test/iter_20000.pth", # 224.6MB
+        "mmyolo":"models/objdetection/mmyolo/mmyolov8/epoch_800.pth",
+        #"yolo":"",
+    }
+    return dirfull.get(model)
 
-    return "blyat"
+# -- [ USING gdown module for downloading from gdrive url ]
+def download_path(modelstr:str):
+    url_coding = models_url(model=modelstr)
+    output = model_dest(model=modelstr)
+    gdown.download(url=url_coding, output=output, quiet=False, fuzzy=True)

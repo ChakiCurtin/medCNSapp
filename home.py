@@ -19,6 +19,8 @@ import plotly.express as px
 # -0- testing new python package -- #
 from st_clickable_images import clickable_images
 
+# TODO[medium/high]: Make path files downloadable on selection of models. Path files are too big for uploading to github and docker. Easier to download.
+
 # -- [ Page settings ] -- #
 st.set_page_config(page_title="Home | Image Segmenter", 
                    initial_sidebar_state="expanded",
@@ -86,6 +88,9 @@ def unet_processor(path_img, image, bar):
     st.session_state.model_chosen = "U-Net"
     config = Path("./models/semantic/unet/unet_test/unet.py")
     pathfile = Path("./models/semantic/unet/unet_test/iter_20000.pth")
+    if not Path.exists(pathfile):
+        print("[*] Downloading unet weights from gdrive")
+        utils.download_path(modelstr="unet")
     cfg = Config.fromfile(config)
     bar.progress(20)
     model = init_model(cfg, str(pathfile), 'cuda:0')
@@ -102,6 +107,9 @@ def deeplab_processor(path_img, image, bar):
     st.session_state.model_chosen = "Deeplabv3+"
     config = Path("./models/semantic/deeplab/deeplab_test/deeplab.py")
     pathfile = Path("./models/semantic/deeplab/deeplab_test/iter_20000.pth")
+    if not Path.exists(pathfile):
+        print("[*] Downloading deeplabv3+ weights from gdrive")
+        utils.download_path(modelstr="deeplab")
     cfg = Config.fromfile(config)
     bar.progress(20)
     model = init_model(cfg, str(pathfile), 'cuda:0')
@@ -135,7 +143,7 @@ def generate_metrics_per_img(img_path:str,):
     gt_path = utils.mask_searcher(gt_path)
     raw_mask:np.ndarray = st.session_state.pred_mask_raw
     f = NamedTemporaryFile(dir='./temp', suffix='.png', delete=True)
-    is_success, buffer = cv2.imencode(".png", raw_mask) # Required for encoding binary images to file
+    _, buffer = cv2.imencode(".png", raw_mask) # Required for encoding binary images to file
     io_buf = io.BytesIO(buffer) # Create a bufferable encoded file
     f.write(io_buf.getbuffer()) # write to file
     df = utils.model_accuracy(ground=Path(gt_path),prediction=Path(f.name))
@@ -172,6 +180,9 @@ def mmyolo_processor(path_img, image, bar):
     st.session_state.model_chosen = "MMYolov8"
     config = Path("./models/objdetection/mmyolo/mmyolov8/mmyolov8_config.py")
     pathfile = Path("./models/objdetection/mmyolo/mmyolov8/epoch_800.pth")
+    if not Path.exists(pathfile):
+        print("[*] Downloading mmyolov8 weights from gdrive")
+        utils.download_path(modelstr="mmyolo")
     model = utils.mmyolo_init(config=config,pathfile=pathfile)
     # -- Inference detection -- #
     detections = utils.inference_detections(model=model, image=path_img)
@@ -420,6 +431,7 @@ def main():
             side_tabs[0].divider()
             side_tabs[0].warning("Semantic segmentation models do not show bounding boxes around the seperate nuclei, it will only show mask on image.")
             side_tabs[0].warning("The model was trained on the MoNuSeg dataset.")
+            side_tabs[0].warning("First processing of image will take a bit longer as the model weight will be downloaded.")
         elif model_option == "Object Detection":
             overall_model = side_tabs[0].radio(label=" ",
                                                       options=["MMYOLOv8",
@@ -431,6 +443,7 @@ def main():
             side_tabs[0].divider()
             side_tabs[0].warning("Object detection models do not show mask, only a bounding box around the seperate detected nuceli.")
             side_tabs[0].warning("The model was trained on the MoNuSeg dataset.")
+            side_tabs[0].warning("First processing of image will take a bit longer as the model weight will be downloaded.")
         elif model_option == "Pipeline: Object Detection -> Semantic Segmentation":
             overall_model = side_tabs[0].radio(label=" ",
                                                       options=["MMYOLO -> SAM"],
@@ -438,6 +451,7 @@ def main():
             side_tabs[0].divider()
             side_tabs[0].warning("The pipeline will use the chosen object detector for the input bounding boxes which will then be used with the segment anything model (SAM) to produce the mask around the detected nuceli.")
             side_tabs[0].warning("The model was trained on the MoNuSeg dataset.")
+            side_tabs[0].warning("First processing of image will take a bit longer as the model weight will be downloaded.")
             side_tabs[0].warning("This will take a while to process and show.")
         st.session_state.model_option = overall_model
 
@@ -452,7 +466,7 @@ def main():
     side_tabs[1].divider()
     # -- [ Be able to choose between different datasets which already have images with GT for metrics ] -- #
     side_tabs[1].header("Or, choose from our sample images:")
-    side_tabs[1].warning("Sample images will also give metrics for how well the model did on that image")
+    side_tabs[1].warning("Sample images will also give metrics for how well the model did on that image [only works for semantic segmentation atm]")
     image_files, images_subset = utils.load_images_test_datasets()
     sets = side_tabs[1].multiselect("Dataset Selector", images_subset, key="dataset_multi")
     view_images = []
