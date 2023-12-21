@@ -18,9 +18,6 @@ import cv2
 import plotly.express as px
 # -0- testing new python package -- #
 from st_clickable_images import clickable_images
-
-# TODO[medium/high]: Make path files downloadable on selection of models. Path files are too big for uploading to github and docker. Easier to download.
-
 # -- [ Page settings ] -- #
 st.set_page_config(page_title="Home | Image Segmenter", 
                    initial_sidebar_state="expanded",
@@ -416,7 +413,7 @@ def main():
     
     # -- [ SETTINGS TAB INFO ] -- #
     side_tabs[0].title("Choose Model:")
-    # TODO[very low]: Add option for custom model (and path file) upload and assess that way (FUTURE THINKING)(MMDETECTION MMSEGMENTATION)
+    # TODO[High]: Add option for custom model (and path file) upload and assess that way (FUTURE THINKING)(MMDETECTION MMSEGMENTATION)
     model_option = side_tabs[0].selectbox(label="Choose Model Range",
                                 options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation',),
                                 index=None,
