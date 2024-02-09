@@ -1,6 +1,7 @@
 import base64
 from io import BufferedReader, BytesIO
 import io
+import os
 # -- [ For OpenMMLab (U-Net, DeepLabv3+, mmyolov8,  )(MMDETECTION, MMSEGMENTATION, MMYOLO) ] -- #
 from mmengine import Config
 from mmseg.apis import init_model, inference_model
@@ -409,7 +410,13 @@ def main():
     ]
     if "menu_tabs" not in st.session_state:
         st.session_state.menu_tabs = menu_tabs
-    side_tabs = st.sidebar.tabs(st.session_state.menu_tabs)                                 
+    side_tabs = st.sidebar.tabs(st.session_state.menu_tabs)       
+
+    # WORKAROUND FOR TEMP ERROR
+    temp_path = './temp/'
+    if not os.path.isdir(temp_path):
+        os.mkdir(temp_path)
+        print("[*]: created temp folder")
     
     # -- [ SETTINGS TAB INFO ] -- #
     side_tabs[0].title("Choose Model:")

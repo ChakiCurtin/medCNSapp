@@ -8,5 +8,8 @@
 docker build . -f dockerfile -t medstreamapp
 docker run -dp 127.0.0.1:8501:8501 medstreamapp
 
+# RUN WITH NVIDIA enabled
+docker run -p 127.0.0.1:8501:8501 --rm --runtime=nvidia medstreamapp
+
 # if you want it attached:
 # docker run -p 127.0.0.1:8501:8501 medstreamapp
