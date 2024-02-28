@@ -39,6 +39,7 @@ def clahe(image, clahe_thresh):
     return image
 
 def main():
+    # TODO: ADD SAMPLE IMAGES HERE 
     st.markdown(
     """
     <style>

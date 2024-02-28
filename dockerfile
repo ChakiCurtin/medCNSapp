@@ -24,22 +24,24 @@ RUN conda clean --all
 ARG PYTORCH
 ARG CUDA
 ARG MMCV
-RUN ["/bin/bash", "-c", "pip install openmim"]
-RUN ["/bin/bash", "-c", "mim install mmengine>=0.7.1"]
-RUN ["/bin/bash", "-c", "mim install mmcv>=2.0.0rc4"]
-RUN ["/bin/bash", "-c", "pip install mmsegmentation>=1.0.0"]
-RUN ["/bin/bash", "-c", "mim install mmdet"]
-RUN ["/bin/bash", "-c", "mim install mmyolo"]
-RUN ["/bin/bash", "-c", "pip install ftfy"]
+RUN ["/bin/bash", "-c", "pip install openmim==0.3.9"]
+RUN ["/bin/bash", "-c", "mim install mmengine==0.10.1"]
+RUN ["/bin/bash", "-c", "mim install mmcv==2.0.1"]
+# check to see if mmsegmenation can be run through mim install or pip
+RUN ["/bin/bash", "-c", "pip install mmsegmentation==1.2.1"]
+RUN ["/bin/bash", "-c", "mim install mmdet==3.2.0"]
+RUN ["/bin/bash", "-c", "mim install mmyolo==0.6.0"]
+RUN ["/bin/bash", "-c", "pip install ftfy==6.1.2"]
 RUN ["/bin/bash", "-c", "pip install regex"]
-RUN ["/bin/bash", "-c", "pip install pandas"]
-RUN ["/bin/bash", "-c", "pip install numpy"]
+RUN ["/bin/bash", "-c", "pip install pandas==2.0.3"]
+RUN ["/bin/bash", "-c", "pip install numpy==1.24.3"]
 RUN ["/bin/bash", "-c", "pip install matplotlib"]
 RUN ["/bin/bash", "-c", "pip install seaborn==0.13.0"]
 RUN ["/bin/bash", "-c", "pip install streamlit==1.28.0"]
 RUN ["/bin/bash", "-c", "pip install plotly==5.18.0"]
 RUN ["/bin/bash", "-c", "pip install streamlit-image-comparison==0.0.4"]
 RUN ["/bin/bash", "-c", "pip install st-clickable-images==0.0.3"]
+RUN ["/bin/bash", "-c", "pip install Jinja2==3.1.2"]
 RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/segment-anything.git"]
 RUN ["/bin/bash", "-c", "pip install gdown"]
 
