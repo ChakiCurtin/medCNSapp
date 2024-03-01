@@ -132,10 +132,12 @@ def masks_array_sam(masks_list):
         #print("[**] Plotting batch masks | batch: " + str(ii))
         sub_mask_list = []
         for mask in masks:
+            mask = mask.cpu().numpy()
             #show_mask(mask.cpu().numpy(), plt.gca())
-            color = np.array([30/255, 144/255, 255/255, 0.6])
-            h, w = mask.cpu().numpy().shape[-2:]
-            mask_image = mask.cpu().numpy().reshape(h, w, 1) * color.reshape(1, 1, -1)
+            #color = np.array([30/255, 144/255, 255/255, 0.6])
+            color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+            h, w = mask.shape[-2:]
+            mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
             sub_mask_list.append(mask_image)
         #print("[**] saving batch of masks | batch: " + str(ii))
         batched_mask = sub_mask_list[0]

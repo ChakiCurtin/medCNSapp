@@ -1,5 +1,5 @@
 import base64
-from io import BufferedReader, BytesIO
+from io import BufferedReader, BytesIO, StringIO
 import io
 import os
 # -- [ For OpenMMLab (U-Net, DeepLabv3+, mmyolov8,  )(MMDETECTION, MMSEGMENTATION, MMYOLO) ] -- #
@@ -69,9 +69,12 @@ def models_selector(chosen_model:str):
         "MMYOLOv8": mmyolo_processor,
         #"Yolov8": yolo_processor,
         "MMYOLO -> SAM": process_image_pipeline,
+        "custom": custom_processor,
      }
     return models_dict.get(chosen_model)
 
+
+# TODO[low/medium]: Create a class for the overlap and test
 def show_selector(chosen_model:str):
     models_dict = {
         "U-Net": semantic_show,
@@ -79,16 +82,64 @@ def show_selector(chosen_model:str):
         "MMYOLOv8": instance_seg_show,
         "Yolov8": instance_seg_show,
         "MMYOLO -> SAM": pipeline_show,
+        "custom": semantic_show
      }
     return models_dict.get(chosen_model)
      
+# TODO[very low]: refactor this and other processors to work for all
+def custom_processor(path_img, image, bar):
+    cfg = None
+    model = None
+    if "custom_model" in st.session_state:
+        if st.session_state.custom_model != None:
+            with NamedTemporaryFile(dir="./temp/", suffix=".py",delete=True) as f:
+                f.write(st.session_state.custom_model.getvalue())
+                cfg = Config.fromfile(f.name)
+                f.close()
+        else:
+            st.warning("Custom Model was not given, please upload the custom model config file")
+            st.stop()
+    else:
+        st.warning("Custom Model was not given, please upload the custom model config file")
+        st.stop()
+    if "custom_weights" in st.session_state:
+        if st.session_state.custom_weights != None:
+            # this should take the uploaded file, create the temp .pth file and sent that to the model_init
+            with NamedTemporaryFile(dir="./temp/", suffix=".pth",delete=True) as f:
+                f.write(st.session_state.custom_weights.getvalue())
+                if cfg.default_scope == "mmseg":
+                    model = init_model(cfg, str(f.name), 'cuda:0')
+                # TODO[low]: Support MMDET and MMYOLO 
+                # elif cfg.default_scope == "mmyolo":
+                # model = utils.mmyolo_init(config=,pathfile=str(f.name))
+                f.close()
+        else:
+            st.warning("Custom Weights was not given, please upload the custom model weights file")
+            st.stop()
+    else:
+        st.warning("Custom Weights was not given, please upload the custom model weights file")
+        st.stop()
+
+    if cfg != None and model != None:
+        st.session_state.model_chosen = f"Custom | Default Scope: {cfg.default_scope}"
+        bar.progress(30)
+        classes = model.dataset_meta['classes']
+        palette = [[0,0,0],[0,255,0]]
+        bar.progress(40)
+        pred = process_images(path_img, model, classes, palette)
+        bar.progress(100)
+        # -- add the mask to current session-- #
+        st.session_state.batched_mask = pred
+
+
 def unet_processor(path_img, image, bar):
     st.session_state.model_chosen = "U-Net"
     config = Path("./models/semantic/unet/unet_test/unet.py")
     pathfile = Path("./models/semantic/unet/unet_test/iter_20000.pth")
     if not Path.exists(pathfile):
-        print("[*] Downloading unet weights from gdrive")
-        utils.download_path(modelstr="unet")
+        with st.spinner("Dowloading model weights..."):
+            print("[*] Downloading unet weights from gdrive")
+            utils.download_path(modelstr="unet")
     cfg = Config.fromfile(config)
     bar.progress(20)
     model = init_model(cfg, str(pathfile), 'cuda:0')
@@ -107,7 +158,8 @@ def deeplab_processor(path_img, image, bar):
     pathfile = Path("./models/semantic/deeplab/deeplab_test/iter_20000.pth")
     if not Path.exists(pathfile):
         print("[*] Downloading deeplabv3+ weights from gdrive")
-        utils.download_path(modelstr="deeplab")
+        with st.spinner("Dowloading model weights..."):
+            utils.download_path(modelstr="deeplab")
     cfg = Config.fromfile(config)
     bar.progress(20)
     model = init_model(cfg, str(pathfile), 'cuda:0')
@@ -137,6 +189,7 @@ def process_images(path_img, model, classes, palette):
     return dest
 
 def generate_metrics_per_img(img_path:str,):
+    # TODO[low]: make GT uploadable so that metrics can be generated from user
     gt_path = utils.name_processer(img=img_path)
     gt_path = utils.mask_searcher(gt_path)
     raw_mask:np.ndarray = st.session_state.pred_mask_raw
@@ -245,6 +298,7 @@ def semantic_show(processed_image, og_img, sidebar_option_subheader, side_tab_op
         show_overlay_checkbox = False
     
     # -- [ setting all checkboxes]
+    OVERLAY_WARNING="Overlay option has to be the only option toggled. This will show overlay only"
     if show_mask_checkbox and not show_image_checkbox and not show_overlay_checkbox:
         show_image = utils.binary_to_bgr(img=st.session_state.pred_mask_raw)
         fig = px.imshow(show_image,height=800,aspect='equal')
@@ -256,13 +310,13 @@ def semantic_show(processed_image, og_img, sidebar_option_subheader, side_tab_op
     elif show_mask_checkbox and show_image_checkbox and not show_overlay_checkbox:
         show_image = st.session_state.batched_mask      
     elif not show_mask_checkbox and show_image_checkbox and show_overlay_checkbox:
-        side_tab_options[2].warning("Overlay option has to be the only option toggled. This will show overlay only")
+        side_tab_options[2].warning(OVERLAY_WARNING)
         show_image = st.session_state.overlay     
     elif show_mask_checkbox and not show_image_checkbox and show_overlay_checkbox:
-        side_tab_options[2].warning("Overlay option has to be the only option toggled. This will show overlay only")
+        side_tab_options[2].warning(OVERLAY_WARNING)
         show_image = st.session_state.overlay    
     elif show_mask_checkbox and show_image_checkbox and show_overlay_checkbox:
-        side_tab_options[2].warning("Overlay option has to be the only option toggled. This will show overlay only")
+        side_tab_options[2].warning(OVERLAY_WARNING)
         show_image = st.session_state.overlay 
 
     if not show_mask_checkbox and not show_image_checkbox and not show_overlay_checkbox:
@@ -326,9 +380,6 @@ def metrics_viewer(data:pd.DataFrame, output):
         st.dataframe(metrics_styled, 
             hide_index=True,
             use_container_width=True)
-        
-        # -- [ Can use HTML table ] -- #
-        #st.markdown(metrics_styled.to_html(), unsafe_allow_html = True)
         with st.expander("Metrics Explanation"):
             st.header("Explanation on the metrics shown above")
             # TODO[low]: Finish this by adding explanations on all the metrics used
@@ -363,13 +414,15 @@ def process_image_pipeline(path_img, image, bar):
     batched_mask = utils.masks_array_sam(masks_list=masks_list)
     bar.progress(90)
     # -- add the mask to current session-- #
+    # TODO[high]: Add metrics for sample in pipeline 
     st.session_state.detections = detections
     st.session_state.batched_mask = batched_mask
 
 def pipeline_show(processed_image, og_img,sidebar_option_subheader, side_tab_options, main_col_1):
+    
     sidebar_option_subheader.subheader("Please choose one of the following options:")
-    bounding_box_checkbox = side_tab_options.checkbox("Show Bounding Box", value=False)
-    show_mask_checkbox = side_tab_options.checkbox("Show Mask", value=True)
+    bounding_box_checkbox = side_tab_options[2].checkbox("Show Bounding Box", value=False)
+    show_mask_checkbox = side_tab_options[2].checkbox("Show Mask", value=True)
 
     # -- Process the mask and output the overlay -- #
     if "mask_img" not in st.session_state:
@@ -395,11 +448,12 @@ def pipeline_show(processed_image, og_img,sidebar_option_subheader, side_tab_opt
     if not bounding_box_checkbox and not show_mask_checkbox:
             # -- Just show original image
             show_image = og_img
-    processed_image.image(show_image, caption=st.session_state.uploaded_image.name)
-    fig = px.imshow(show_image,height=800,aspect='equal',)
-    st.plotly_chart(fig,use_container_width=True)
+    #processed_image.image(show_image)
+    fig = px.imshow(show_image,height=800,aspect='equal')
+    processed_image.plotly_chart(fig,use_container_width=True)
+    #st.plotly_chart(fig,use_container_width=True)
 
-    main_col_1.download_button(label="Download", data=download_image(show_image), file_name=st.session_state.uploaded_image.name, mime="image/png")
+    #main_col_1.download_button(label="Download", data=download_image(show_image), file_name=st.session_state.uploaded_image.name, mime="image/png")
 
 def main():
     st.sidebar.title("Single Cell Nuclei Segmentation")
@@ -422,7 +476,7 @@ def main():
     side_tabs[0].title("Choose Model:")
     # TODO[High]: Add option for custom model (and path file) upload and assess that way (FUTURE THINKING)(MMDETECTION MMSEGMENTATION)
     model_option = side_tabs[0].selectbox(label="Choose Model Range",
-                                options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation',),
+                                options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation','Custom'),
                                 index=None,
                                 placeholder="Choose a Model Type",
                                 )
@@ -457,6 +511,11 @@ def main():
             side_tabs[0].warning("The model was trained on the MoNuSeg dataset.")
             side_tabs[0].warning("First processing of image will take a bit longer as the model weight will be downloaded.")
             side_tabs[0].warning("This will take a while to process and show.")
+        elif model_option == "Custom":
+            st.session_state.custom_model = side_tabs[0].file_uploader("Upload model configuration file (py)", type=["py"])
+            st.session_state.custom_weights = side_tabs[0].file_uploader("Upload model weights file (pth)", type=["pth"])
+            side_tabs[0].warning("Currently only supports MMSEGMENTATION models")
+            overall_model = "custom"
         st.session_state.model_option = overall_model
 
     # -- [ IMAGE UPLOAD TAB INFO ] -- #

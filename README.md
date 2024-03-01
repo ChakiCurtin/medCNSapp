@@ -4,7 +4,7 @@ Tested both locally and through docker on Ubuntu 22.04.3 LTS (WSL2) with NVIDIA 
 
 Requires Python 3.8
 
-**Currently can only run with GPU** (working on CPU)
+**Currently can only run with GPU** (working on CPU support)
 
 ## Features
 - Analysis of tissue images pre and post segmentation
@@ -67,7 +67,7 @@ docker stop >ID<
 ### Source
 1. clone the full repository to a directory of your choice (or download as zip)
 ```bash
-git clone https://github.com/ChakiCurtin/mmyolo_sam_app.git
+git clone https://github.com/ChakiCurtin/medCNSapp.git
 cd mmyolo_sam_app/
 ```
 2. Some form of conda or venv is recommended for managing dependencies

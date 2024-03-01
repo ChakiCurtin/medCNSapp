@@ -11,3 +11,4 @@ secondaryBackgroundColor = '#141414' # <- better
 headless = true
 enableCORS=true
 port = 8501
+maxUploadSize = 1000
