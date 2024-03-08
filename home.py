@@ -228,6 +228,7 @@ def mask_overlay(img, mask, classes, palette):
 
 
 def mmyolo_processor(path_img, image, bar):
+    # TODO[high]: Split the pipeline option to allow users to select the obj detector which parses info into SAM. (done in pipeline_extractor)
     st.session_state.model_chosen = "MMYolov8"
     config = Path("./models/objdetection/mmyolo/mmyolov8/mmyolov8_config.py")
     pathfile = Path("./models/objdetection/mmyolo/mmyolov8/epoch_800.pth")

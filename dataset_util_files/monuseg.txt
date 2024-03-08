@@ -1,0 +1,51 @@
+TCGA-18-5592-01Z-00-DX1,train,Bronchus and lung,Lung squamous cell carcinoma
+TCGA-21-5784-01Z-00-DX1,train,Bronchus and lung,Lung squamous cell carcinoma
+TCGA-21-5786-01Z-00-DX1,train,Bronchus and lung,Lung squamous cell carcinoma
+TCGA-38-6178-01Z-00-DX1,train,Bronchus and lung,Lung adenocarcinoma
+TCGA-49-4488-01Z-00-DX1,train,Bronchus and lung,Lung adenocarcinoma
+TCGA-50-5931-01Z-00-DX1,train,Bronchus and lung,Lung adenocarcinoma
+TCGA-A7-A13E-01Z-00-DX1,train,Breast,Breast invasive carcinoma
+TCGA-A7-A13F-01Z-00-DX1,train,Breast,Breast invasive carcinoma
+TCGA-AR-A1AK-01Z-00-DX1,train,Breast,Breast invasive carcinoma
+TCGA-AR-A1AS-01Z-00-DX1,train,Breast,Breast invasive carcinoma
+TCGA-AY-A8YK-01A-01-TS1,train,Colon,Colon adenocarcinoma
+TCGA-B0-5698-01Z-00-DX1,train,Kidney,Kidney renal clear cell carcinoma
+TCGA-B0-5710-01Z-00-DX1,train,Kidney,Kidney renal clear cell carcinoma
+TCGA-B0-5711-01Z-00-DX1,train,Kidney,Kidney renal clear cell carcinoma
+TCGA-BC-A217-01Z-00-DX1,train,Liver and intrahepatic bile ducts,Liver hepatocellular carcinoma
+TCGA-CH-5767-01Z-00-DX1,train,Prostate gland,Prostate adenocarcinoma
+TCGA-DK-A2I6-01A-01-TS1,train,Bladder,Bladder Urothelial Carcinoma
+TCGA-E2-A14V-01Z-00-DX1,train,Breast,Breast invasive carcinoma
+TCGA-E2-A1B5-01Z-00-DX1,train,Breast,Breast invasive carcinoma
+TCGA-F9-A8NY-01Z-00-DX1,train,Kidney,Kidney renal papillary cell carcinoma
+TCGA-FG-A87N-01Z-00-DX1,train,Brain,Brain Lower Grade Glioma
+TCGA-G2-A2EK-01A-02-TSB,train,Bladder,Bladder Urothelial Carcinoma
+TCGA-G9-6336-01Z-00-DX1,train,Prostate gland,Prostate adenocarcinoma
+TCGA-G9-6348-01Z-00-DX1,train,Prostate gland,Prostate adenocarcinoma
+TCGA-G9-6356-01Z-00-DX1,train,Prostate gland,Prostate adenocarcinoma
+TCGA-G9-6362-01Z-00-DX1,train,Prostate gland,Prostate adenocarcinoma
+TCGA-G9-6363-01Z-00-DX1,train,Prostate gland,Prostate adenocarcinoma
+TCGA-HE-7128-01Z-00-DX1,train,Kidney,Kidney renal papillary cell carcinoma
+TCGA-HE-7129-01Z-00-DX1,train,Kidney,Kidney renal papillary cell carcinoma
+TCGA-HE-7130-01Z-00-DX1,train,Kidney,Kidney renal papillary cell carcinoma
+TCGA-KB-A93J-01A-01-TS1,val,Stomach,Stomach adenocarcinoma
+TCGA-MH-A561-01Z-00-DX1,val,Kidney,Kidney renal papillary cell carcinoma
+TCGA-NH-A8F7-01A-01-TS1,val,Colon,Colon adenocarcinoma
+TCGA-RD-A8N9-01A-01-TS1,val,Stomach,Stomach adenocarcinoma
+TCGA-UZ-A9PJ-01Z-00-DX1,val,Kidney,Kidney renal papillary cell carcinoma
+TCGA-UZ-A9PN-01Z-00-DX1,val,Kidney,Kidney renal papillary cell carcinoma
+TCGA-XS-A8TJ-01Z-00-DX1,val,Cervix uteri,Cervical squamous cell carcinoma and endocervical adenocarcinoma
+TCGA-2Z-A9J9-01A-01-TS1,test,Kidney,Kidney renal papillary cell carcinoma
+TCGA-44-2665-01B-06-BS6,test,Bronchus and lung,Lung adenocarcinoma
+TCGA-69-7764-01A-01-TS1,test,Bronchus and lung,Lung adenocarcinoma
+TCGA-A6-6782-01A-01-BS1,test,Colon,Colon adenocarcinoma
+TCGA-AC-A2FO-01A-01-TS1,test,Breast,Breast invasive carcinoma
+TCGA-AO-A0J2-01A-01-BSA,test,Breast,Breast invasive carcinoma
+TCGA-CU-A0YN-01A-02-BSB,test,Bladder,Bladder Urothelial Carcinoma
+TCGA-EJ-A46H-01A-03-TSC,test,Prostate gland,Prostate adenocarcinoma
+TCGA-FG-A4MU-01B-01-TS1,test,Brain,Brain Lower Grade Glioma
+TCGA-GL-6846-01A-01-BS1,test,Kidney,Kidney renal papillary cell carcinoma
+TCGA-HC-7209-01A-01-TS1,test,Prostate gland,Prostate adenocarcinoma
+TCGA-HT-8564-01Z-00-DX1,test,Brain,Brain Lower Grade Glioma
+TCGA-IZ-8196-01A-01-BS1,test,Kidney,Kidney renal papillary cell carcinoma
+TCGA-ZF-A9R5-01A-01-TS1,test,Bladder,Bladder Urothelial Carcinoma

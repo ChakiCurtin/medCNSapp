@@ -1,6 +1,6 @@
+__pycache__/
 *.pth
 temp/
 *.pyc
-__pycache__/
 models/yolo/*
 bugs/

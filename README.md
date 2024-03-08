@@ -1,4 +1,4 @@
-# Application for clinical research into Cell Nucli Analysis
+# Application for clinical research into Cell Nuclei Analysis
 
 Tested both locally and through docker on Ubuntu 22.04.3 LTS (WSL2) with NVIDIA RTX 3070Ti. 
 
