@@ -164,20 +164,16 @@ def monuseg():
 
 #TODO[medium]: Finish the rest of the datasets. Find and add information for each
 def cryonuseg():
-    st.write("CryoNuSeg WIP")
     cols = st.columns(2)
     url = "https://www.kaggle.com/datasets/ipateam/segmentation-of-nuclei-in-cryosectioned-he-images?select=tissue+images"
     cols[0].write("""About CryoNuSeg:
                 - publicly available CNS dataset
                 - The first frozen tissue sample dataset to be fully annotated
-                - It contains 51 images, with 37 in the training set and 14 in the test set.
-                - It provides 30837 annotations, with 24140 in the training set
-                - and 6697 in the test set. This is a binary segmentation dataset, so
-                - nuclei are all considered to be the same. Every image comes
+                - It contains 30 whole slide images from 10 organs.
+                - Since it is frozen section tissue samples, the cell quality can suffer. This one is a high-quality FS dataset.
+                - nuclei are all considered to be the same.
                 - as a 1000 × 1000 pixel region of interest (ROI).
-                - All Images come from The Cancer Genome Atlas, which is the world's largest digital slide repository.
-                - Originally created for The Grand Challenge, it is a well known dataset for nuclei segmentation.
-                - Full MoNuSeg dataset download [link](%s).""" % url)
+                - Full CryoNuSeg dataset download [link](%s).""" % url)
     cols[0].divider()
 def tnbc():
     st.write("TNBC WIP")
@@ -185,7 +181,11 @@ def tnbc():
 def main():
     dataset_option = st.sidebar.selectbox(
         label="Choose Dataset to view:",
-        options=('MoNuSeg', 'MoNuSAC', 'CryoNuSeg', 'TNBC'),
+        options=('MoNuSeg', 
+                 'MoNuSAC', 
+                 #'CryoNuSeg', 
+                 #'TNBC',
+                 ),
         index=0,
         placeholder="Choose a Dataset",
         )

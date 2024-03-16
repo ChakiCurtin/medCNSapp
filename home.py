@@ -182,17 +182,28 @@ def process_images(path_img, model, classes, palette):
     # TODO[low]: Add metrics and overlay and pred_mask_raw to get deleted on image reset
     # For now use the fact that sample is only created if it is chosen as a sample image
     # for checking.
-    if "sample" in st.session_state:
+    if ("sample" in st.session_state) or ("gt_mask" in st.session_state):
         if st.session_state.sample:
             metrics = generate_metrics_per_img(path_img)
             st.session_state.metrics = metrics
+        elif "gt_mask" in st.session_state:
+            print("[*] HOME.PY | process_images | gt_mask provided")
+            gt_img = str(st.session_state.gt_mask)
+            metrics = generate_metrics_per_img(gt_img)
+            st.session_state.metrics = metrics
     return dest
 
-def generate_metrics_per_img(img_path:str,):
-    # TODO[low]: make GT uploadable so that metrics can be generated from user
-    gt_path = utils.name_processer(img=img_path)
-    gt_path = utils.mask_searcher(gt_path)
-    raw_mask:np.ndarray = st.session_state.pred_mask_raw
+def generate_metrics_per_img(img_path:str):
+    gt_path = img_path
+    if "sample" in st.session_state:
+        if st.session_state.sample:
+            gt_path = utils.name_processer(img=img_path)
+            gt_path = utils.mask_searcher(gt_path)
+        else:
+            if "gt_mask" in st.session_state:
+                gt_path = img_path
+    print(f"File for metrics: {gt_path}")
+    raw_mask:np.ndarray = st.session_state.pred_mask_raw # Prediction raw mask
     f = NamedTemporaryFile(dir='./temp', suffix='.png', delete=True)
     _, buffer = cv2.imencode(".png", raw_mask) # Required for encoding binary images to file
     io_buf = io.BytesIO(buffer) # Create a bufferable encoded file
@@ -202,6 +213,7 @@ def generate_metrics_per_img(img_path:str,):
     overlay =  utils.gt_pred_overlay(ground=Path(gt_path),prediction=Path(f.name))
     st.session_state.overlay = overlay
     return df
+
 
 def mask_overlay(img, mask, classes, palette):
     dest = img.copy()
@@ -290,8 +302,10 @@ def semantic_show(processed_image, og_img, sidebar_option_subheader, side_tab_op
         st.session_state.overlay_check = False
     show_mask_checkbox = side_tab_options[2].checkbox("Show Mask", value=st.session_state.mask_check)
     show_image_checkbox = side_tab_options[2].checkbox("Show Image", value=st.session_state.image_check)
-    if "sample" in st.session_state:
+    if "sample" in st.session_state or "gt_mask" in st.session_state:
         if st.session_state.sample:
+            show_overlay_checkbox = side_tab_options[2].checkbox("Show Overlay", value= st.session_state.overlay_check)
+        elif "gt_mask" in st.session_state:
             show_overlay_checkbox = side_tab_options[2].checkbox("Show Overlay", value= st.session_state.overlay_check)
         else:
             show_overlay_checkbox = False
@@ -337,7 +351,7 @@ def semantic_show(processed_image, og_img, sidebar_option_subheader, side_tab_op
         
     side_tab_options[2].divider()
     # -- [ Get accuracy of the prediction result if sample image is chosen ] -- #
-    if "sample" in st.session_state:
+    if ("sample" in st.session_state) or ("gt_mask" in st.session_state):
         if st.session_state.sample:
             if "metrics" in st.session_state:
                 df:pd.DataFrame = st.session_state.metrics
@@ -346,6 +360,15 @@ def semantic_show(processed_image, og_img, sidebar_option_subheader, side_tab_op
                     st.session_state.menu_tabs.append(new_tab)
                     st.rerun()
                 metrics_viewer(data=df,output=side_tab_options[3])
+        else:
+            if "metrics" in st.session_state:
+                df:pd.DataFrame = st.session_state.metrics
+                new_tab = "\u2001Metrics\u2001\u2001"
+                if new_tab not in st.session_state.menu_tabs:
+                    st.session_state.menu_tabs.append(new_tab)
+                    st.rerun()
+                metrics_viewer(data=df,output=side_tab_options[3])
+
 
 def metrics_viewer(data:pd.DataFrame, output):
     """
@@ -475,7 +498,6 @@ def main():
     
     # -- [ SETTINGS TAB INFO ] -- #
     side_tabs[0].title("Choose Model:")
-    # TODO[High]: Add option for custom model (and path file) upload and assess that way (FUTURE THINKING)(MMDETECTION MMSEGMENTATION)
     model_option = side_tabs[0].selectbox(label="Choose Model Range",
                                 options=('Semantic Segmentation', 'Object Detection', 'Pipeline: Object Detection -> Semantic Segmentation','Custom'),
                                 index=None,
@@ -527,6 +549,8 @@ def main():
     if 'is_uploaded' not in st.session_state:
         st.session_state.is_uploaded = False
     uploaded_image = side_tabs[1].file_uploader("Upload H&E stained image (png)", type=["png"], disabled=st.session_state.is_uploaded)
+    uploaded_gt = side_tabs[1].file_uploader("Upload Ground Truth image (png) (optional)", type=["png"])
+
     side_tabs[1].divider()
     # -- [ Be able to choose between different datasets which already have images with GT for metrics ] -- #
     side_tabs[1].header("Or, choose from our sample images:")
@@ -586,6 +610,30 @@ def main():
         if "sample" in st.session_state:
             st.session_state.sample = False
         # -- ------------------------------ -- #
+            
+
+############
+#  GT MASK 
+############
+#    gt_path_disk = "./temp/gt/"
+
+    # TODO[HIGH]: Finish upload check for GT adn add to session. ALSO ADD TO PLACES FOR METRICS AND OVERLAY
+    if uploaded_gt is not None:
+        if "gt_mask" not in st.session_state:     
+            # if not os.path.exists(gt_path_disk):
+            #     os.mkdir(gt_path_disk)
+            #     print("[*] HOME.py | GT path created")
+            print("[*] HOME.PY | line: 620 | GT provided")
+            f = NamedTemporaryFile(dir="./temp", suffix='.png', delete=False)
+            f.write(uploaded_gt.getbuffer())
+            st.session_state.gt_mask = f.name
+            print(f"Checking if file exists: {os.path.exists(st.session_state.gt_mask)} | {Path(st.session_state.gt_mask).stem}.png")
+    else:
+        if "gt_mask" in st.session_state:
+            if os.path.exists(st.session_state.gt_mask):
+                os.remove(st.session_state.gt_mask)
+            del st.session_state.gt_mask
+
 
     if "image" in st.session_state:
         processed_image = st.empty()

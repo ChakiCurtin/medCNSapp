@@ -46,7 +46,7 @@ RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/seg
 RUN ["/bin/bash", "-c", "pip install gdown"]
 
 #Install application
-RUN git clone -b main https://github.com/ChakiCurtin/mmyolo_sam_app.git /mmyolo_sam_st
+RUN git clone -b main https://github.com/ChakiCurtin/medCNSapp.git /mmyolo_sam_st
 WORKDIR /mmyolo_sam_st
 ENV FORCE_CUDA="1"
 #RUN pip install -r requirements.txt # No need to install requirements when installing container-wide

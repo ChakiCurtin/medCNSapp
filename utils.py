@@ -264,11 +264,10 @@ def gt_pred_overlay(ground: Path, prediction: Path):
     pred = cv2.imread(str(prediction), cv2.IMREAD_GRAYSCALE)
     gt_mask_3d = binary_to_bgr(img=gt)
     pred_mask_3d = binary_to_bgr(img=pred)
-    # -- [ adding colour to binary images ] -- #
+    # -- [ adding colour to binary images [B,G,R] ] -- #
     green = [0, 255, 0]
-    blue =  [0, 0, 255]
-    yel =   [255, 255, 0]
-    red =   [255, 0, 0] 
+    blue =  [255, 0, 0] 
+    red =   [0, 0, 255]
     white = [255, 255, 255]
     # -- [ Colouring all white pixels to another colour] -- #
     pred_mask_3d[np.where((pred_mask_3d==[255,255,255]).all(axis=2))] = red # Prediction mask
