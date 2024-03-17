@@ -44,6 +44,7 @@ RUN ["/bin/bash", "-c", "pip install st-clickable-images==0.0.3"]
 RUN ["/bin/bash", "-c", "pip install Jinja2==3.1.2"]
 RUN ["/bin/bash", "-c", "pip install git+https://github.com/facebookresearch/segment-anything.git"]
 RUN ["/bin/bash", "-c", "pip install gdown"]
+RUN ["/bin/bash", "-c", "pip install torchstain==1.3.0"]
 
 #Install application
 RUN git clone -b main https://github.com/ChakiCurtin/medCNSapp.git /mmyolo_sam_st
